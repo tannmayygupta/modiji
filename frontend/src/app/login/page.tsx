@@ -24,9 +24,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     // Only init Recaptcha in production (Firebase is active)
-    if (!IS_DEV && !window.recaptchaVerifier) {
+    if (!IS_DEV && !(window as any).recaptchaVerifier) {
       try {
-        window.recaptchaVerifier = setupRecaptcha("recaptcha-container");
+        (window as any).recaptchaVerifier = setupRecaptcha("recaptcha-container");
       } catch (err) {
         console.warn("Firebase not configured yet.");
       }

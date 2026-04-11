@@ -72,13 +72,16 @@ async def upload_document(
 
     # Upload file bytes directly internet to Supabase
     file_bytes = await file.read()
-    supabase_url = upload_file_to_supabase(
-        file_bytes=file_bytes,
-        file_name=file.filename or "unknown.pdf",
-        bucket_name="pmis-media",
-        folder_name="documents",
-        content_type=file.content_type or "application/pdf"
-    )
+    try:
+        supabase_url = upload_file_to_supabase(
+            file_bytes=file_bytes,
+            file_name=file.filename or "unknown.pdf",
+            bucket_name="pmis-media",
+            folder_name="documents",
+            content_type=file.content_type or "application/pdf"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     if not supabase_url:
         raise HTTPException(status_code=500, detail="Failed to upload document to Cloud Storage.")

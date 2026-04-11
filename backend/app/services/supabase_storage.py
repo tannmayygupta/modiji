@@ -32,5 +32,7 @@ def upload_file_to_supabase(file_bytes: bytes, file_name: str, bucket_name: str,
         public_url = soup_client.storage.from_(bucket_name).get_public_url(unique_path)
         return public_url
     except Exception as e:
-        print(f"Supabase Upload Failed: {str(e)}")
-        return None
+        error_msg = str(e)
+        if "row-level security" in error_msg.lower() or "403" in error_msg:
+             raise ValueError("Supabase RLS Error: Your bucket is private. Go to Supabase Dashboard -> Storage -> pmis-media -> Policies, and allow INSERT/SELECT for Public!")
+        raise ValueError(f"SDK Error: {error_msg}")
