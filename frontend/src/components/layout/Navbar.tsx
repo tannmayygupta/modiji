@@ -12,6 +12,11 @@ export function Navbar() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
+    // 🔋 Background WAKE-UP ping for Render (Invisible to user)
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const healthUrl = API_URL.includes("/api/v1") ? API_URL.replace("/api/v1", "/health") : `${API_URL}/health`;
+    fetch(healthUrl).catch(() => {});
+
     // Check Auth
     setHasToken(!!localStorage.getItem("pmis_token"));
     

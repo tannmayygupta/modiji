@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     TOP_K_RECOMMENDATIONS: int = 5
 
     # CORS
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    ALLOWED_ORIGINS: list[str] = ["*"]
 
     class Config:
         env_file = ".env"
