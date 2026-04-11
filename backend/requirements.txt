@@ -25,6 +25,13 @@ python-dotenv==1.0.1
 # CORS
 httpx==0.27.0
 
+# Machine Learning & AI
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.5.1
+sentence-transformers==3.0.1
+scikit-surprise==1.1.4
+
 # Utilities
 uuid6==2024.7.10
 
