@@ -1,0 +1,345 @@
+"""
+Content-Based Filtering Engine
+
+Matches candidate profiles against internship requirements using
+multi-dimensional similarity scoring:
+  - Skill similarity (TF-IDF + cosine / semantic embeddings)
+  - Education level matching (hierarchical)
+  - Location proximity scoring
+  - Sector alignment
+  - Field of study relevance
+
+This is the primary engine (60% weight) and works from Day 1
+with zero historical interaction data — critical for cold-start.
+"""
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+# Education hierarchy for ordered comparison
+EDUCATION_HIERARCHY = {
+    "10TH": 1,
+    "12TH": 2,
+    "ITI": 2,
+    "DIPLOMA": 3,
+    "GRADUATE": 4,
+    "PG": 5,
+}
+
+# Feature weights (must sum to 1.0)
+WEIGHTS = {
+    "skills": 0.35,
+    "education": 0.20,
+    "location": 0.20,
+    "sector": 0.15,
+    "field": 0.10,
+}
+
+
+class ContentBasedEngine:
+    """
+    Content-Based Filtering for internship recommendation.
+
+    Computes a similarity score between a candidate's profile and each
+    internship's requirements across multiple dimensions.
+    """
+
+    def __init__(self, use_semantic: bool = False):
+        """
+        Args:
+            use_semantic: If True, use sentence-transformers for skill matching.
+                         If False, use TF-IDF (faster, good for prototype).
+        """
+        self.use_semantic = use_semantic
+        self._tfidf = TfidfVectorizer(
+            lowercase=True,
+            stop_words="english",
+            max_features=5000,
+        )
+        self._semantic_model = None
+
+        if use_semantic:
+            try:
+                from sentence_transformers import SentenceTransformer
+                self._semantic_model = SentenceTransformer("all-MiniLM-L6-v2")
+                logger.info("Loaded sentence-transformer model for semantic matching")
+            except ImportError:
+                logger.warning("sentence-transformers not installed, falling back to TF-IDF")
+                self.use_semantic = False
+
+    # ──────────────────────────────────────────────
+    # Sub-Score Computations
+    # ──────────────────────────────────────────────
+
+    def compute_skill_similarity(
+        self,
+        candidate_skills: list[str],
+        internship_skills: list[str],
+    ) -> tuple[float, dict]:
+        """
+        Compute skill similarity between candidate and internship.
+
+        Returns:
+            (score, skill_alignment) where skill_alignment has matched/partial/missing
+        """
+        if not internship_skills:
+            return 0.5, {"matched": [], "partial": [], "missing": []}
+
+        if not candidate_skills:
+            return 0.0, {"matched": [], "partial": [], "missing": internship_skills}
+
+        c_lower = set(s.lower().strip() for s in candidate_skills)
+        i_lower = set(s.lower().strip() for s in internship_skills)
+
+        # Exact matches
+        matched = c_lower & i_lower
+        missing = i_lower - c_lower
+
+        # Partial matches: check for substring containment
+        partial = set()
+        remaining_missing = set()
+        for m in missing:
+            found_partial = False
+            for c in c_lower:
+                if m in c or c in m:
+                    partial.add(m)
+                    found_partial = True
+                    break
+            if not found_partial:
+                remaining_missing.add(m)
+
+        # Score: exact match = 1.0, partial = 0.5, missing = 0.0
+        if len(i_lower) > 0:
+            score = (len(matched) * 1.0 + len(partial) * 0.5) / len(i_lower)
+        else:
+            score = 0.5
+
+        # If semantic model available, use it for remaining missing skills
+        if self.use_semantic and self._semantic_model and remaining_missing and candidate_skills:
+            semantic_score = self._semantic_skill_match(
+                list(c_lower - matched), list(remaining_missing)
+            )
+            # Blend: 70% exact/partial + 30% semantic
+            score = 0.7 * score + 0.3 * semantic_score
+
+        skill_alignment = {
+            "matched": list(matched)[:10],
+            "partial": list(partial)[:5],
+            "missing": list(remaining_missing)[:5],
+        }
+
+        return min(1.0, score), skill_alignment
+
+    def _semantic_skill_match(self, candidate_skills: list, missing_skills: list) -> float:
+        """Use sentence-transformer embeddings for semantic skill similarity."""
+        if not self._semantic_model or not candidate_skills or not missing_skills:
+            return 0.0
+
+        try:
+            c_embeddings = self._semantic_model.encode(candidate_skills)
+            m_embeddings = self._semantic_model.encode(missing_skills)
+            similarities = cosine_similarity(c_embeddings, m_embeddings)
+            # For each missing skill, take the max similarity to any candidate skill
+            max_sims = similarities.max(axis=0)
+            return float(np.mean(max_sims))
+        except Exception as e:
+            logger.error(f"Semantic matching failed: {e}")
+            return 0.0
+
+    def compute_education_match(
+        self,
+        candidate_education: str,
+        required_education: str,
+    ) -> float:
+        """
+        Compare candidate's education level against requirement.
+
+        Over-qualified: full score (1.0)
+        Exact match: full score (1.0)
+        Under-qualified: partial score based on gap
+        """
+        c_rank = EDUCATION_HIERARCHY.get(candidate_education, 4)
+        r_rank = EDUCATION_HIERARCHY.get(required_education, 4)
+
+        if c_rank >= r_rank:
+            return 1.0
+        else:
+            # Partial credit — larger gap = lower score
+            return max(0.2, 1.0 - (r_rank - c_rank) * 0.25)
+
+    def compute_location_score(
+        self,
+        candidate_state: Optional[str],
+        candidate_preference: Optional[str],
+        internship_state: str,
+        internship_city: Optional[str] = None,
+    ) -> float:
+        """
+        Score based on geographic match and candidate location preference.
+
+        Same state → 1.0
+        Adjacent state → 0.7
+        PAN_INDIA preference → min 0.6
+        Different state, HOME_STATE pref → 0.2
+        """
+        if not candidate_state:
+            return 0.5  # No preference = neutral
+
+        same_state = (
+            candidate_state.lower().strip() == internship_state.lower().strip()
+            if candidate_state and internship_state else False
+        )
+
+        pref = (candidate_preference or "HOME_STATE").upper()
+
+        if same_state:
+            return 1.0
+        elif pref == "PAN_INDIA":
+            return 0.7
+        elif pref == "NEARBY":
+            # Simplified: check if states are in same region
+            return 0.5
+        else:  # HOME_STATE
+            return 0.2
+
+    def compute_sector_score(
+        self,
+        candidate_sectors: list[str],
+        internship_sector: str,
+    ) -> float:
+        """Score based on sector preference match."""
+        if not candidate_sectors:
+            return 0.5
+        if not internship_sector:
+            return 0.5
+
+        c_sectors = [s.lower().strip() for s in candidate_sectors]
+        i_sector = internship_sector.lower().strip()
+
+        if i_sector in c_sectors:
+            return 1.0
+
+        # Check partial match
+        for cs in c_sectors:
+            if cs in i_sector or i_sector in cs:
+                return 0.7
+
+        return 0.2
+
+    def compute_field_score(
+        self,
+        candidate_field: Optional[str],
+        preferred_fields: list[str],
+    ) -> float:
+        """Score based on field of study relevance."""
+        if not candidate_field or not preferred_fields:
+            return 0.5
+
+        c_field = candidate_field.lower().strip()
+        p_fields = [f.lower().strip() for f in preferred_fields]
+
+        if c_field in p_fields:
+            return 1.0
+
+        # Check partial match
+        for pf in p_fields:
+            if c_field in pf or pf in c_field:
+                return 0.7
+
+        return 0.3
+
+    # ──────────────────────────────────────────────
+    # Main Scoring
+    # ──────────────────────────────────────────────
+
+    def score(self, candidate: dict, internship: dict) -> tuple[float, dict]:
+        """
+        Compute the overall content-based similarity score.
+
+        Args:
+            candidate: Dict with keys: skills, education_level, state,
+                      location_preference, sector_preferences, field_of_study
+            internship: Dict with keys: required_skills, min_education,
+                       state, city, sector, preferred_fields
+
+        Returns:
+            (final_score, metadata) where metadata contains sub-scores and explanations
+        """
+        # Skill similarity
+        skill_score, skill_alignment = self.compute_skill_similarity(
+            candidate.get("skills", []),
+            internship.get("required_skills", []),
+        )
+
+        # Education match
+        edu_score = self.compute_education_match(
+            candidate.get("education_level", "GRADUATE"),
+            internship.get("min_education", "GRADUATE"),
+        )
+
+        # Location
+        loc_score = self.compute_location_score(
+            candidate.get("state"),
+            candidate.get("location_preference"),
+            internship.get("state", ""),
+            internship.get("city"),
+        )
+
+        # Sector
+        sector_score = self.compute_sector_score(
+            candidate.get("sector_preferences", []),
+            internship.get("sector", ""),
+        )
+
+        # Field of study
+        field_score = self.compute_field_score(
+            candidate.get("field_of_study"),
+            internship.get("preferred_fields", []),
+        )
+
+        # Weighted combination
+        final_score = (
+            WEIGHTS["skills"] * skill_score +
+            WEIGHTS["education"] * edu_score +
+            WEIGHTS["location"] * loc_score +
+            WEIGHTS["sector"] * sector_score +
+            WEIGHTS["field"] * field_score
+        )
+
+        metadata = {
+            "sub_scores": {
+                "skills": round(skill_score, 4),
+                "education": round(edu_score, 4),
+                "location": round(loc_score, 4),
+                "sector": round(sector_score, 4),
+                "field": round(field_score, 4),
+            },
+            "skill_alignment": skill_alignment,
+            "weights": WEIGHTS,
+        }
+
+        return round(final_score, 4), metadata
+
+    def score_all(
+        self,
+        candidate: dict,
+        internships: list[dict],
+    ) -> list[tuple[str, float, dict]]:
+        """
+        Score a candidate against all internships.
+
+        Returns:
+            List of (internship_id, score, metadata) sorted by score descending.
+        """
+        results = []
+        for internship in internships:
+            score, metadata = self.score(candidate, internship)
+            results.append((internship.get("id", ""), score, metadata))
+
+        results.sort(key=lambda x: x[1], reverse=True)
+        return results

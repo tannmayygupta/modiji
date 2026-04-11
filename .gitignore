@@ -1,0 +1,36 @@
+# Root Level Ignored Folders
+.env
+.env.local
+.env.*
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+
+# Mac
+.DS_Store
+
+# Frontend
+frontend/.next/
+frontend/node_modules/
+frontend/.env.local
+
+# Backend
+backend/__pycache__/
+backend/.pytest_cache/
+backend/pmis.db
+backend/uploads/
+backend/.env
+backend/*.json
+!backend/package.json
+!backend/tsconfig.json
+!backend/package-lock.json
+
+# ML
+ml/__pycache__/
+ml/models/*
+ml/data/*
+!ml/data/.keep
+!ml/models/.keep
+ml/notebooks/.ipynb_checkpoints/

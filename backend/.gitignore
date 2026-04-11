@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
+
+# Environment Variables
+.env
+.env.*
+
+# Secrets
+*firebase*.json
+*credentials*.json
+*.pem
+*.key
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads
+uploads/
+
+# Testing/Coverage
+.pytest_cache/
+.coverage
+htmlcov/
