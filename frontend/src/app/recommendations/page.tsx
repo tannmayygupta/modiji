@@ -91,7 +91,9 @@ export default function RecommendationsPage() {
           <div>
             <p className="font-black uppercase text-red-800 dark:text-red-400">{error}</p>
             <p className="text-sm font-medium text-red-600 dark:text-red-300 mt-1">
-              Please complete your profile in the Wizard first, then return here.
+              {error.includes("under review") 
+                ? "Please check back later once an administrator has verified your credentials."
+                : "Please complete your profile in the Wizard first, then return here."}
             </p>
           </div>
         </div>

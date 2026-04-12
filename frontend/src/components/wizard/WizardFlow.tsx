@@ -619,7 +619,7 @@ export function WizardFlow() {
                     <Camera className="h-7 w-7" /> Video Profile
                   </h3>
                   <p className="text-muted-foreground mt-2 font-medium dark:text-gray-400">
-                    A short introduction boosts your matching score significantly. Optional but highly recommended.
+                    A short introduction boosts your matching score significantly. This step is required to unlock AI recommendations.
                   </p>
                 </div>
 
@@ -714,7 +714,8 @@ export function WizardFlow() {
                 (step === 2 && !educationLevel) ||
                 (step === 3 && skills.length === 0) ||
                 (step === 4 && sectorPreferences.length === 0) ||
-                (step === 5 && (!stateName || !locationPref))
+                (step === 5 && (!stateName || !locationPref)) ||
+                (step === 6 && !videoScores)
               }
             >
               {step === totalSteps ? (isSubmitting ? "EXECUTING..." : "EXECUTE") : "NEXT"}

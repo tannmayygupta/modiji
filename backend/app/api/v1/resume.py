@@ -40,18 +40,27 @@ async def parse_resume(
             content_type="application/pdf"
         )
         
-        # 2. Link this document into our database natively
+        # 2. Upsert: Delete old resume record if it exists
+        existing = db.query(CandidateDocument).filter(
+            CandidateDocument.candidate_id == current_user.id,
+            CandidateDocument.doc_type == "resume"
+        ).first()
+        if existing:
+            db.delete(existing)
+            db.flush()
+
+        # 3. Link this document into our database natively
         doc = CandidateDocument(
             candidate_id=current_user.id,
             doc_type="resume",
             file_path=supabase_url,
             original_filename=file.filename or "resume.pdf",
-            status="APPROVED",  # Resumes are auto-approved functionally for ML use
+            status="PENDING",  # Admin must manually approve resumes just like marksheets
         )
         db.add(doc)
         db.commit()
 
-        # 3. Send raw bytes to our new Resume Parser model
+        # 4. Send raw bytes to our new Resume Parser model
         extracted_data = ResumeParser.process_resume(contents)
         
         if not extracted_data["success"]:
