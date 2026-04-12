@@ -12,7 +12,7 @@ import {
   CheckCircle2, ShieldCheck, Upload, FileText, AlertTriangle
 } from "lucide-react";
 
-const API = "http://localhost:8000/api/v1";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 const EDUCATION_LEVELS = ["10TH", "12TH", "ITI", "DIPLOMA", "GRADUATE", "PG"];
 const EDUCATION_LABELS: Record<string, string> = {
