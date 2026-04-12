@@ -13,44 +13,72 @@ This platform serves as a modern bridge between aspiring candidates and corporat
 3. **Ineffective Matching:** Moving away from static keyword filtering to a robust Hybrid Machine Learning Recommendation Engine leveraging Content-Based (TF-IDF/Semantic) and Collaborative Filtering mathematics to ensure high-accuracy skill and sector mapping.
 4. **Administrative Verification:** Providing an isolated, fast-action Admin Gateway to review candidate credentials (10th, 12th, and Diploma marksheets) directly from Cloud CDN Storage.
 
+---
+
+## Machine Learning Architecture & Model Training 🧠
+
+Our core recommendation engine is deeply customized to respect the official government mandate while using advanced Data Science for hyper-personalization.
+
+### 1. Training Methodologies & Algorithms
+We implement a **Hybrid Recommender System** running natively in Python using `scipy` and `scikit-learn`:
+- **Content-Based Semantic Matching (TF-IDF & Cosine Similarity):** Rather than strictly matching text (e.g., "React" to "React JS"), we vectorize candidate skills and job requirements to map them in mathematical space. This allows the model to map raw capability versus role demands intelligently.
+- **Collaborative Filtering (SVD - Singular Value Decomposition):** We use custom `scipy.sparse.linalg.svds` mathematics to decompose massive interaction matrices (Views, Saves, Applies). This powers our prediction models (e.g., *"Candidates similar to you successfully applied here"*).
+- **Affirmative Action Boosting:** We engineered an algebraic multiplier based on the official PMIS guidelines to mathematically boost scores for candidates hailing from Aspirational Districts and specific socio-economic categories.
+- **Cascading Geographical Fallback:** To solve "0 Results Found" dead-ends, the model enforces strict geography algorithms. If an internship isn't found in a candidate's `HOME_STATE`, the engine automatically widens the mathematical radius to `NEARBY_REGION`, and ultimately `PAN_INDIA`—transparently notifying the UI of the fallback reason.
+
+### 2. Datasets & Literature Utilized
+To build our TF-IDF token weights and structure our geographic Affirmative Action logic, we utilized the following core data reference points:
+*   [Prime Minister’s Internship Scheme Guidelines (PMIS) PDF](https://pminternship.mca.gov.in/PMInternshipSchemeGuidelines.pdf) - *Used exclusively for extracting strict rules regarding stipends, location filtering blocks, and Aspirational District targeting parameters.*
+*   [Kaggle: Indian Job Postings & Tech Skills Dataset](https://www.kaggle.com/datasets/promptcloud/indeed-job-posting-dataset) - *Analyzed for structuring our content-based dictionaries to recognize skill adjacencies across Indian corporate MSME sectors.*
+*   *Indian Geography Demographics* - *Used for extracting regional mappings to build robust `HOME_STATE` to `NEARBY_REGION` geographic arrays in our ML module.*
+
+### 3. Machine Learning File Structure
+Our ML models and architectures are cleanly modularized inside the `/ml` directory:
+- `ml/engine/hybrid_scorer.py`: **The Master Orchestrator.** Calculates final confidence probabilities, merges TF-IDF with SVD, applies Affirmative Action boosts, and executes Geo-Cascading limits.
+- `ml/engine/content_based.py`: Handles pure skill math. Runs TF-IDF Vectorization, Cosine Similarity calculations, and contains the `REGION_MAP` dictionary linking states together.
+- `ml/engine/collaborative.py`: Handles matrix factorization using Scipy SVD. Learns organically from live telemetry (Clicks, Applies, Saves).
+- `backend/app/services/video_analysis.py`: Contains our Groq Whisper + LLaMA 3.3 data pipeline that crushes unoptimized `.mp4` payloads and extracts the "Communication Score Multiplier".
+
+---
+
 ## System Architecture
 
-The architecture is built on a highly decoupled structure, prioritizing raw performance, distinct separation of concerns, and ease of scalability.
+The architecture is explicitly decoupled, prioritizing raw performance, distinct separation of concerns, and ease of scalability.
 
-- **Frontend Application:** Built using Next.js 14 and React. It operates entirely as a static, pre-rendered client communicating externally to the API layer. State management is handled locally, and complex aesthetic transitions rely heavily on custom CSS alongside Framer Motion.
-- **Backend Service:** Powered by FastAPI (Python 3.12). This layer handles all heavy lifting, including relational database transactions, authentication routing, file handling, and synchronous bridging to the Machine Learning pipelines.
-- **Data Persistence:** Relational data operations are handled via SQLite, heavily abstracted by SQLAlchemy ORM to allow effortless migration to PostgreSQL. Document payloads are handled cleanly via Supabase Cloud Storage APIs, rather than straining local server disk operations.
-- **AI Processing Pipeline:** Incorporates Groq's Large Language Models and specialized audio extraction protocols to securely evaluate human dialogue without exhausting standard infrastructure limits.
+- **Frontend Application:** Next.js 14, Tailwind CSS, Framer Motion. Set up as a Server-Side Rendered (SSR) capable, incredibly fast edge client.
+- **Backend Service:** FastAPI (Python 3.12). Handles ultra-fast asynchronous execution, Pydantic type safety, and synchronous bridging to our Machine Learning pipelines.
+- **Database & Cloud Execution:** 100% powered by Supabase Cloud PostgreSQL (managed via SQLAlchemy ORM). Media assets (Videos, PDFs) exist natively in Supabase Storage Buckets entirely off-server.
 
 ## Project Structure
 
 ```text
 pm-internship-engine/
-├── frontend/          # Next.js 14 Client Server
-│   ├── src/app/       # Application routing
-│   └── src/components/# Isolated UI components and flows
+├── frontend/          # Next.js 14 React UI
 ├── backend/           # FastAPI Application Core
 │   ├── app/
 │   │   ├── api/       # RESTful HTTP routers
-│   │   ├── models/    # Database table architectures
-│   │   ├── services/  # Cloud and Video extraction logic
-│   │   └── db/        # Data seed scripts
+│   │   ├── services/  # Cloud, Video extraction (Groq Whisper) APIs
+│   │   └── db/        # Database session and setup schemas
 ├── ml/                # Machine Learning Operations
-│   ├── engine/        # Hybrid Algorithm logic
-│   └── data/          # Synthetic dataset generators
+│   ├── engine/        # Hybrid Algorithm logic (SVD, TF-IDF)
+│   └── data/          # Synthetic dataset and parsing pipelines
 ```
 
 ## Setup Instructions
 
-This platform utilizes separate servers for the Frontend and Backend to simulate production-grade interactions.
-
 ### 1. Environment Configurations
 Ensure you have Python 3.11+ and Node.js 18+ installed on your system.
-You will need a `.env` file at the root of the `/backend` directory containing your respective Supabase and Groq keys, as well as the standard backend port definition.
+You will require a PostgreSQL Database link. Create a `.env` file inside `/backend`:
+```env
+DATABASE_URL=postgresql://postgres.xxx:YOUR_PASSWORD@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+SECRET_KEY=your_secure_randomly_generated_string
+GROQ_API_KEY=gsk_yourkey
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_key
+```
 
 ### 2. Backend Initialization
-Navigate to the backend directory, initialize a virtual environment, and install the required dependencies.
-
+Open a terminal and build your Python environment:
 ```bash
 cd backend
 python -m venv venv
@@ -58,44 +86,33 @@ venv\Scripts\activate      # For Windows systems
 pip install -r requirements.txt
 ```
 
-Initialize the baseline synthetic data generation and seed the database to test the Machine Learning algorithms immediately.
-
+Seed the Supabase database with initial Internship Data so the ML engine has rows to target:
 ```bash
-cd ../ml/data
-python synthetic_generator.py
-
-cd ../../backend
-python -m app.db.seed
+python -c "from app.db.seed import seed_internships_if_empty; from app.db.session import SessionLocal; db = SessionLocal(); seed_internships_if_empty(db); db.close()"
 ```
 
-Start the FastAPI ASGI server on port 8000.
-
+Start the FastAPI ASGI server:
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload
 ```
-The REST API and its interactive documentation will now be available at `http://localhost:8000/docs`.
+*The REST API and its interactive documentation will now be available at `http://localhost:8000/docs`.*
 
 ### 3. Frontend Initialization
-In a separate terminal, navigate to the frontend directory. Install Node package modules and spin up the development instance.
-
+In a separate terminal, install dependencies and launch the client:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-The Client Interface will be live at `http://localhost:3000`.
+*The Client Interface will be live at `http://localhost:3000`.*
 
 ## Administrative Access
 
-To protect user data, the Administrative Verification queue is decoupled from the main interface structure. To access pending user documents, navigate manually to `/admin`.
-- Default Username: modiji
-- Default Password: Modiji123
+To protect user data, the Administrative Document Verification queue is deliberately detached from the main user navigation.
+- **Access Route:** `http://localhost:3000/admin`
+- **Default Target:** `modiji / Modiji123`
 
-This panel automatically pulls unverified candidate payloads and dictates the progression of a candidate's authorization step based on document veracity.
-
-## Machine Learning Integration Strategy
-
-The project implements a Hybrid Engine weighing multiple aspects of a candidate's profile. Content-Based filtering dictates geographic and educational alignments, while TF-IDF vectorization clusters matching terminology. Following initial MVP evaluations, this sub-system is configured to shift from static seeded arrays toward a full Kaggle-ingested dataset pipeline, significantly enhancing model training depth.
+*(This panel directly interfaces with Supabase S3 file signatures, allowing validation of Aadhaar, 10th, 12th, and Diploma documents.)*
 
 ## Team Attributes
 - Tanmay Gupta | Aarya Bhangadia | Rounak Nagwani | Sahil Roy | Paras Sharma
