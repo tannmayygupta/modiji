@@ -69,8 +69,9 @@ class ContentBasedEngine:
                 self._semantic_model = SentenceTransformer("all-MiniLM-L6-v2")
                 logger.info("Loaded sentence-transformer model for semantic matching")
             except ImportError:
-                logger.warning("sentence-transformers not installed, falling back to TF-IDF")
-                self.use_semantic = False
+                logger.warning("sentence-transformers not installed, using difflib for lightweight semantic matching")
+                self.use_semantic = True
+                self._semantic_model = None
 
     # ──────────────────────────────────────────────
     # Sub-Score Computations
@@ -119,13 +120,13 @@ class ContentBasedEngine:
         else:
             score = 0.5
 
-        # If semantic model available, use it for remaining missing skills
-        if self.use_semantic and self._semantic_model and remaining_missing and candidate_skills:
+        # If semantic mode is enabled, use it for remaining missing skills
+        if self.use_semantic and remaining_missing and candidate_skills:
             semantic_score = self._semantic_skill_match(
-                list(c_lower - matched), list(remaining_missing)
+                list(c_lower - matched - partial), list(remaining_missing)
             )
-            # Blend: 70% exact/partial + 30% semantic
-            score = 0.7 * score + 0.3 * semantic_score
+            # Blend: 60% exact/partial + 40% semantic
+            score = (score * 0.6) + (semantic_score * 0.4)
 
         skill_alignment = {
             "matched": list(matched)[:10],
@@ -136,20 +137,34 @@ class ContentBasedEngine:
         return min(1.0, score), skill_alignment
 
     def _semantic_skill_match(self, candidate_skills: list, missing_skills: list) -> float:
-        """Use sentence-transformer embeddings for semantic skill similarity."""
-        if not self._semantic_model or not candidate_skills or not missing_skills:
+        """Use sentence-transformer or lightweight difflib for semantic skill similarity."""
+        if not candidate_skills or not missing_skills:
             return 0.0
 
-        try:
-            c_embeddings = self._semantic_model.encode(candidate_skills)
-            m_embeddings = self._semantic_model.encode(missing_skills)
-            similarities = cosine_similarity(c_embeddings, m_embeddings)
-            # For each missing skill, take the max similarity to any candidate skill
-            max_sims = similarities.max(axis=0)
-            return float(np.mean(max_sims))
-        except Exception as e:
-            logger.error(f"Semantic matching failed: {e}")
-            return 0.0
+        if self._semantic_model:
+            try:
+                c_embeddings = self._semantic_model.encode(candidate_skills)
+                m_embeddings = self._semantic_model.encode(missing_skills)
+                similarities = cosine_similarity(c_embeddings, m_embeddings)
+                max_sims = similarities.max(axis=0)
+                return float(np.mean(max_sims))
+            except Exception as e:
+                logger.error(f"Semantic matching failed: {e}")
+                return 0.0
+        
+        # Lightweight fallback: Text sequence matching
+        import difflib
+        total_sim = 0.0
+        for m_skill in missing_skills:
+            best_match = 0.0
+            for c_skill in candidate_skills:
+                # SequenceMatcher yields a ratio 0.0 to 1.0 (e.g. 'React' vs 'React.js' -> ~0.83)
+                sim = difflib.SequenceMatcher(None, c_skill, m_skill).ratio()
+                if sim > best_match:
+                    best_match = sim
+            total_sim += best_match
+            
+        return total_sim / len(missing_skills)
 
     def compute_education_match(
         self,

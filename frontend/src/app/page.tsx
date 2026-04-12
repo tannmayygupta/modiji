@@ -172,7 +172,7 @@ export default function Home() {
               <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-5 transition-opacity duration-700 pointer-events-none transform scale-150 -translate-y-10 translate-x-10">
                 <Fingerprint className="w-full h-full" />
               </div>
-              <div className="absolute top-10 left-10">
+              <div className="mb-auto">
                 <div className="h-14 w-14 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
                   <Fingerprint className="text-indigo-600 dark:text-indigo-400" size={28} />
                 </div>
@@ -189,7 +189,7 @@ export default function Home() {
               className="md:col-span-4 md:row-span-2 group bg-zinc-900 dark:bg-[#111] border border-zinc-800 rounded-[2rem] p-10 relative overflow-hidden text-white flex flex-col justify-end"
             >
                <div className="absolute top-0 right-0 w-full h-[50%] bg-gradient-to-b from-indigo-500/20 to-transparent"></div>
-               <div className="absolute top-10 left-10">
+               <div className="mb-auto">
                 <div className="h-14 w-14 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
                   <ShieldAlert className="text-white" size={28} />
                 </div>
@@ -205,7 +205,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }}
               className="md:col-span-4 group bg-white dark:bg-[#0c0c0c] border border-gray-200 dark:border-gray-800 rounded-[2rem] p-10 relative overflow-hidden hover:border-black dark:hover:border-white transition-colors duration-500 flex flex-col justify-end"
             >
-              <div className="absolute top-10 left-10">
+              <div className="mb-auto">
                 <div className="h-14 w-14 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
                   <Database className="text-purple-600 dark:text-purple-400" size={28} />
                 </div>
@@ -221,7 +221,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.3 }}
               className="md:col-span-4 group bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 rounded-[2rem] p-10 relative overflow-hidden flex flex-col justify-end"
             >
-              <div className="absolute top-10 left-10">
+              <div className="mb-auto">
                 <div className="h-14 w-14 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
                   <ArrowUpRight className="text-white" size={28} />
                 </div>

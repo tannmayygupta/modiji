@@ -47,7 +47,7 @@ def get_recommendations(
     Uses the hybrid AI engine (content-based + collaborative filtering).
     """
     # Validate that the user has completed the wizard AND is admin-approved
-    if current_user.auth_step.value < 3:
+    if current_user.auth_step < 3:
         raise HTTPException(
             status_code=403,
             detail="Your documents are currently under review. Recommendations will unlock once an Admin approves them."

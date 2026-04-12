@@ -88,6 +88,37 @@ def get_saved_internships(
     }
 
 
+@router.get("/applied")
+def get_applied_internships(
+    current_user: Candidate = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get list of internships applied to by the candidate."""
+    applied = db.query(Interaction).filter(
+        Interaction.candidate_id == current_user.id,
+        Interaction.interaction_type == InteractionType.APPLY,
+    ).all()
+
+    internship_ids = list(set(s.internship_id for s in applied))
+    internships = db.query(Internship).filter(Internship.id.in_(internship_ids)).all()
+
+    return {
+        "applied_count": len(internships),
+        "internships": [
+            {
+                "id": str(i.id),
+                "company_name": i.company_name,
+                "role_title": i.role_title,
+                "sector": i.sector,
+                "city": i.city,
+                "state": i.state,
+                "stipend_amount": i.stipend_amount,
+            }
+            for i in internships
+        ],
+    }
+
+
 @router.get("/history")
 def get_interaction_history(
     current_user: Candidate = Depends(get_current_user),

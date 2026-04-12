@@ -24,6 +24,8 @@ export default function ProfilePage() {
   const [fetchError, setFetchError] = useState("");
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState("");
+  const [appliedJobs, setAppliedJobs] = useState<any[]>([]);
+  const [savedJobs, setSavedJobs] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -69,10 +71,29 @@ export default function ProfilePage() {
           const data = await res.json();
           setDocuments(data.documents || []);
         }
-      } catch (err) {}
+      } catch (err) { }
     };
 
-    Promise.all([fetchProfile(), fetchDocs()]).finally(() => setLoading(false));
+    // Fetch Applied & Saved
+    const fetchInteractions = async () => {
+      try {
+        const [appliedRes, savedRes] = await Promise.all([
+          fetch(`${API}/interactions/applied`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/interactions/saved`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+
+        if (appliedRes.ok) {
+          const data = await appliedRes.json();
+          setAppliedJobs(data.internships || []);
+        }
+        if (savedRes.ok) {
+          const data = await savedRes.json();
+          setSavedJobs(data.internships || []);
+        }
+      } catch (err) { }
+    };
+
+    Promise.all([fetchProfile(), fetchDocs(), fetchInteractions()]).finally(() => setLoading(false));
   }, [router]);
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -80,14 +101,14 @@ export default function ProfilePage() {
     setIsUpdating(true);
     setSuccessMsg("");
     setUpdateError("");
-    
+
     try {
       const token = getToken();
       const res = await fetch(`${API}/candidates/me`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(formData),
       });
@@ -113,7 +134,7 @@ export default function ProfilePage() {
       const token = getToken();
       const formData = new FormData();
       formData.append("file", file);
-      
+
       const res = await fetch(`${API}/candidates/upload-video`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -121,7 +142,7 @@ export default function ProfilePage() {
       });
 
       if (!res.ok) throw new Error("Video upload failed");
-      
+
       // Reload profile to fetch new scores
       window.location.reload();
     } catch (err: any) {
@@ -162,14 +183,14 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
+
         {/* Profile Settings */}
         <Card className="border-2 border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] rounded-none bg-white dark:bg-[#0a0a0a]">
           <CardContent className="p-8">
             <h2 className="text-xl font-black uppercase border-b-2 border-black dark:border-white pb-3 mb-6 flex items-center gap-2 dark:text-white">
               Personal Information
             </h2>
-            
+
             {successMsg && (
               <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border-2 border-green-500 text-green-700 dark:text-green-400 text-xs font-bold uppercase tracking-wide">
                 ✓ {successMsg}
@@ -184,20 +205,20 @@ export default function ProfilePage() {
             <form onSubmit={handleUpdate} className="space-y-4">
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 block mb-1">Full Name</label>
-                <input 
-                  type="text" 
-                  value={formData.name} 
-                  onChange={e => setFormData({...formData, name: e.target.value})}
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full p-3 border-2 border-dashed border-black dark:border-white dark:text-white bg-transparent focus:border-solid font-bold uppercase"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 block mb-1">Phone Number</label>
-                <input 
-                  type="tel" 
-                  value={formData.phone} 
-                  onChange={e => setFormData({...formData, phone: e.target.value})}
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full p-3 border-2 border-dashed border-black dark:border-white dark:text-white bg-transparent focus:border-solid font-bold uppercase"
                 />
               </div>
@@ -205,26 +226,26 @@ export default function ProfilePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 block mb-1">State</label>
-                  <input 
-                    type="text" 
-                    value={formData.state} 
-                    onChange={e => setFormData({...formData, state: e.target.value})}
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={e => setFormData({ ...formData, state: e.target.value })}
                     className="w-full p-3 border-2 border-dashed border-black dark:border-white dark:text-white bg-transparent focus:border-solid font-bold uppercase"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 block mb-1">District</label>
-                  <input 
-                    type="text" 
-                    value={formData.district} 
-                    onChange={e => setFormData({...formData, district: e.target.value})}
+                  <input
+                    type="text"
+                    value={formData.district}
+                    onChange={e => setFormData({ ...formData, district: e.target.value })}
                     className="w-full p-3 border-2 border-dashed border-black dark:border-white dark:text-white bg-transparent focus:border-solid font-bold uppercase"
                   />
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isUpdating}
                 className="w-full h-12 mt-4 rounded-none bg-black dark:bg-white text-white dark:text-black font-black uppercase border-2 flex items-center justify-center border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
               >
@@ -239,7 +260,7 @@ export default function ProfilePage() {
                   <Edit3 className="mr-2 h-3 w-3" /> Re-run Wizard
                 </Button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Education Level</p>
@@ -270,9 +291,9 @@ export default function ProfilePage() {
               <div className="text-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-700">
                 <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm font-bold text-gray-500">No documents uploaded yet.</p>
-                <Button 
-                  onClick={() => router.push("/wizard")} 
-                  variant="outline" 
+                <Button
+                  onClick={() => router.push("/wizard")}
+                  variant="outline"
                   className="mt-4 rounded-none border-2 border-black dark:border-white dark:text-white font-black uppercase hover:bg-gray-100 dark:hover:bg-gray-900"
                 >
                   Go to Wizard
@@ -291,11 +312,10 @@ export default function ProfilePage() {
                           {doc.original_filename}
                         </p>
                       </div>
-                      <div className={`flex items-center gap-1 text-xs font-black uppercase px-2 py-1 border-2 ${
-                        doc.status === "APPROVED" ? "bg-green-100 text-green-800 border-green-800" :
+                      <div className={`flex items-center gap-1 text-xs font-black uppercase px-2 py-1 border-2 ${doc.status === "APPROVED" ? "bg-green-100 text-green-800 border-green-800" :
                         doc.status === "REJECTED" ? "bg-red-100 text-red-800 border-red-800" :
-                        "bg-yellow-100 text-yellow-800 border-yellow-800"
-                      }`}>
+                          "bg-yellow-100 text-yellow-800 border-yellow-800"
+                        }`}>
                         {doc.status === "APPROVED" && <CheckCircle2 size={12} />}
                         {doc.status === "REJECTED" && <XCircle size={12} />}
                         {doc.status === "PENDING" && <Clock size={12} />}
@@ -311,7 +331,7 @@ export default function ProfilePage() {
                 ))}
               </div>
             )}
-            
+
             {profile?.auth_step >= 3 && (
               <div className="mt-6 p-4 bg-black dark:bg-white text-white dark:text-black">
                 <p className="font-black uppercase text-center text-sm">
@@ -330,7 +350,7 @@ export default function ProfilePage() {
 
       {(profile?.video_uploaded || profile?.auth_step >= 3) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
+
           {/* AI Assessment Card */}
           {profile?.video_uploaded && (
             <Card className="border-2 border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] rounded-none bg-white dark:bg-[#0a0a0a] h-fit">
@@ -365,7 +385,7 @@ export default function ProfilePage() {
                       <a href={profile.video_url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full p-3 border-2 border-black dark:border-white font-bold text-xs uppercase hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors dark:text-white cursor-pointer">
                         <ExternalLink size={16} /> Watch Submitted Video
                       </a>
-                      
+
                       <div className="relative w-full">
                         <input type="file" accept="video/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleVideoReupload} disabled={uploadingVideo} />
                         <Button disabled={uploadingVideo} className="flex items-center justify-center gap-2 w-full p-3 border-2 border-dashed border-black dark:border-white bg-transparent font-bold text-xs uppercase hover:bg-gray-50 dark:hover:bg-[#111] transition-colors dark:text-gray-300 rounded-none h-11 text-black">
@@ -379,21 +399,61 @@ export default function ProfilePage() {
             </Card>
           )}
 
-          {/* Applied Internships */}
+          {/* Saved & Applied Internships */}
           {profile?.auth_step >= 3 && (
-            <Card className="border-2 border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] rounded-none bg-white dark:bg-[#0a0a0a] h-fit">
-              <CardContent className="p-8">
-                <h2 className="text-xl font-black uppercase border-b-2 border-black dark:border-white pb-3 mb-6 flex items-center gap-2 dark:text-white">
-                  <Briefcase className="h-6 w-6" /> Applied Internships
-                </h2>
-                <div className="text-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-700">
-                  <p className="text-sm font-bold text-gray-500 mb-2">No internship applications yet.</p>
-                  <Button onClick={() => router.push("/recommendations")} variant="outline" className="mt-4 rounded-none border-2 border-black dark:text-white dark:border-white font-black uppercase hover:bg-gray-100 dark:hover:bg-[#111]">
-                    Browse Internships
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-8 h-fit">
+              <Card className="border-2 border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] rounded-none bg-white dark:bg-[#0a0a0a]">
+                <CardContent className="p-8">
+                  <h2 className="text-xl font-black uppercase border-b-2 border-black dark:border-white pb-3 mb-6 flex items-center gap-2 dark:text-white">
+                    <Briefcase className="h-6 w-6" /> Applied Internships
+                  </h2>
+                  {appliedJobs.length === 0 ? (
+                    <div className="text-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-700">
+                      <p className="text-sm font-bold text-gray-500 mb-2">No internship applications yet.</p>
+                      <Button onClick={() => router.push("/recommendations")} variant="outline" className="mt-4 rounded-none border-2 border-black dark:text-white dark:border-white font-black uppercase hover:bg-gray-100 dark:hover:bg-[#111]">
+                        Browse Internships
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {appliedJobs.map((job) => (
+                        <div key={`applied-${job.id}`} className="border-2 border-black dark:border-white p-4">
+                          <p className="font-bold text-sm text-blue-600 dark:text-blue-400">{job.company_name}</p>
+                          <p className="font-black uppercase text-black dark:text-white">{job.role_title}</p>
+                          <p className="text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-widest">{job.city}, {job.state}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-black dark:border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] rounded-none bg-white dark:bg-[#0a0a0a]">
+                <CardContent className="p-8">
+                  <h2 className="text-xl font-black uppercase border-b-2 border-black dark:border-white pb-3 mb-6 flex items-center gap-2 dark:text-white">
+                    <Save className="h-6 w-6" /> Saved Internships
+                  </h2>
+                  {savedJobs.length === 0 ? (
+                    <div className="text-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-700">
+                      <p className="text-sm font-bold text-gray-500">No saved internships.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {savedJobs.map((job) => (
+                        <div key={`saved-${job.id}`} className="border-2 border-black dark:border-white p-4">
+                          <p className="font-bold text-sm text-blue-600 dark:text-blue-400">{job.company_name}</p>
+                          <p className="font-black uppercase text-black dark:text-white">{job.role_title}</p>
+                          <div className="flex gap-4 mt-1">
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{job.city}, {job.state}</p>
+                            <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">₹{job.stipend_amount}/mo</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           )}
 
         </div>
