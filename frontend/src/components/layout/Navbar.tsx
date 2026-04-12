@@ -72,9 +72,6 @@ export function Navbar() {
           </button>
           
           <nav className="flex items-center space-x-2 sm:space-x-4">
-            <Link href="/admin" className="text-xs font-black uppercase text-black dark:text-white hover:underline px-2 tracking-widest hidden sm:block">
-              Admin
-            </Link>
             
             {hasToken ? (
               <>
