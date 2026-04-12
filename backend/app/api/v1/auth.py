@@ -136,7 +136,7 @@ def verify_firebase_phone(req: FirebaseOTPRequest, db: Session = Depends(get_db)
         import uuid
         # Creating placeholder user with a globally unique email to bypass SQLite UNIQUE constraint
         candidate = Candidate(
-            name="New User (OTP)",
+            name=f"User (+91 {clean_phone})",
             email=f"otp_{uuid.uuid4().hex[:8]}@pmis.gov.in",
             phone=f"+91{clean_phone}",
             password_hash=hash_password(firebase_uid[:16]),

@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -190,10 +190,20 @@ def get_document_file(document_id: str, db: Session = Depends(get_db)):
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    if not os.path.exists(doc.file_path):
+    file_path = doc.file_path
+
+    # Handle Cloud (Supabase) URLs by redirecting to them
+    if file_path.startswith("http://") or file_path.startswith("https://"):
+        return RedirectResponse(url=file_path)
+
+    # Handle local file paths
+    if file_path.startswith("local://"):
+        file_path = file_path[8:]  # Strip 'local://'
+        
+    if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File missing from storage")
 
-    return FileResponse(doc.file_path, filename=doc.original_filename)
+    return FileResponse(file_path, filename=doc.original_filename)
 
 
 @router.post("/admin/review/{document_id}")
@@ -211,31 +221,36 @@ def review_document(
     if action not in ("APPROVED", "REJECTED"):
         raise HTTPException(status_code=400, detail="action must be APPROVED or REJECTED")
 
-    doc = db.query(CandidateDocument).filter(
-        CandidateDocument.id == document_id
-    ).first()
+    doc_query = db.query(CandidateDocument).filter(CandidateDocument.id == document_id)
+    doc = doc_query.first()
+    
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Update document status
-    doc.status = action
-    doc.reviewer_notes = notes
-    doc.reviewed_by = reviewer
-    doc.reviewed_at = datetime.utcnow()
+    candidate_id = doc.candidate_id
 
-    # If approved, check whether ALL documents for this candidate are now approved
+    # Update ONLY this specific document using an atomic update
+    doc_query.update({
+        "status": action,
+        "reviewer_notes": notes,
+        "reviewed_by": reviewer,
+        "reviewed_at": datetime.utcnow()
+    })
+    db.commit()
+
+    # After commit, check if ALL documents for this candidate are approved
     if action == "APPROVED":
-        candidate = db.query(Candidate).filter(Candidate.id == doc.candidate_id).first()
+        candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
         if candidate:
             all_docs = db.query(CandidateDocument).filter(
                 CandidateDocument.candidate_id == candidate.id
             ).all()
 
-            # Must have at least one doc, and all must be approved
-            if all_docs and all(d.status == "APPROVED" for d in all_docs):
+            # Must have at least one doc, and there must be NO pending or rejected docs
+            has_pending = any(d.status != "APPROVED" for d in all_docs)
+            if all_docs and not has_pending:
                 candidate.auth_step = 3  # FULL ACCESS UNLOCKED
-
-    db.commit()
+                db.commit()
 
     return {
         "message": f"Document {action.lower()} successfully.",
