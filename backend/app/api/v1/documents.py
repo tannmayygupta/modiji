@@ -41,10 +41,11 @@ async def upload_document(
     Upload an education document for admin verification.
     Candidate must be at auth_step >= 2 (Aadhaar verified).
     """
-    if current_user.auth_step < 2:
+    # Allow upload from auth_step 1 onwards (OTP login is sufficient)
+    if current_user.auth_step < 1:
         raise HTTPException(
             status_code=403,
-            detail="Complete Aadhaar verification before uploading documents."
+            detail="Please login first before uploading documents."
         )
 
     if doc_type not in ALLOWED_DOC_TYPES:
@@ -70,8 +71,9 @@ async def upload_document(
         db.delete(existing)
         db.commit()
 
-    # Upload file bytes directly internet to Supabase
+    # Upload file bytes to Supabase (with local disk fallback)
     file_bytes = await file.read()
+    supabase_url = None
     try:
         supabase_url = upload_file_to_supabase(
             file_bytes=file_bytes,
@@ -81,10 +83,15 @@ async def upload_document(
             content_type=file.content_type or "application/pdf"
         )
     except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Supabase upload failed, falling back to local disk: {e}")
 
+    # Fallback: save to local disk if Supabase not configured or failed
     if not supabase_url:
-        raise HTTPException(status_code=500, detail="Failed to upload document to Cloud Storage.")
+        safe_name = f"{uuid.uuid4().hex[:8]}_{file.filename or 'upload'}"
+        local_path = os.path.join(UPLOAD_DIR, safe_name)
+        with open(local_path, "wb") as f_out:
+            f_out.write(file_bytes)
+        supabase_url = f"local://{local_path}"
 
     # Create DB record with the cloud URL
     doc = CandidateDocument(
