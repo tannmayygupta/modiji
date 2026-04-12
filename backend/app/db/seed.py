@@ -37,7 +37,8 @@ def seed_database():
         # Check if data already exists
         existing_candidates = db.query(Candidate).count()
         if existing_candidates > 0:
-            print(f"⚠️  Database already has {existing_candidates} candidates. Skipping seed.")
+            print(f"Warning:  Database already has {existing_candidates} candidates. Skipping seed.")
+            # Drop tables and recreate so we guarantee we are replacing? Actually the script drops it above! Wait, no, base.metadata.drop_all happens first. So this will always be 0.
             return
 
         # Load generated data
@@ -46,7 +47,7 @@ def seed_database():
         interactions_file = os.path.join(DATA_DIR, "interactions.json")
 
         if not os.path.exists(candidates_file):
-            print("❌ No generated data found. Run the synthetic generator first:")
+            print("Error: No generated data found. Run the synthetic generator first:")
             print("   cd ml/data && python synthetic_generator.py")
             return
 
@@ -57,14 +58,16 @@ def seed_database():
         with open(interactions_file, "r", encoding="utf-8") as f:
             interactions_data = json.load(f)
 
-        print(f"📦 Loading {len(candidates_data)} candidates...")
+        print(f"Loading {len(candidates_data)} candidates...")
+        default_password_hash = pwd_context.hash("password123")
+        
         for c in candidates_data:
             candidate = Candidate(
-                id=uuid.UUID(c["id"]),
+                id=c["id"],
                 name=c["name"],
                 email=c["email"],
                 phone=c.get("phone"),
-                password_hash=pwd_context.hash("password123"),  # Default password for testing
+                password_hash=default_password_hash,  # Reusing the hash for massive speedup
                 education_level=EducationLevel(c["education_level"]),
                 field_of_study=c.get("field_of_study"),
                 academic_score=c.get("academic_score"),
@@ -82,12 +85,12 @@ def seed_database():
             db.add(candidate)
 
         db.flush()
-        print(f"✅ Loaded {len(candidates_data)} candidates")
+        print(f"Loaded {len(candidates_data)} candidates")
 
-        print(f"📦 Loading {len(internships_data)} internships...")
+        print(f"Loading {len(internships_data)} internships...")
         for i in internships_data:
             internship = Internship(
-                id=uuid.UUID(i["id"]),
+                id=i["id"],
                 company_name=i["company_name"],
                 company_description=i.get("company_description"),
                 role_title=i["role_title"],
@@ -109,25 +112,25 @@ def seed_database():
             db.add(internship)
 
         db.flush()
-        print(f"✅ Loaded {len(internships_data)} internships")
+        print(f"Loaded {len(internships_data)} internships")
 
-        print(f"📦 Loading {len(interactions_data)} interactions...")
+        print(f"Loading {len(interactions_data)} interactions...")
         for ix in interactions_data:
             interaction = Interaction(
-                id=uuid.UUID(ix["id"]),
-                candidate_id=uuid.UUID(ix["candidate_id"]),
-                internship_id=uuid.UUID(ix["internship_id"]),
+                id=ix["id"],
+                candidate_id=ix["candidate_id"],
+                internship_id=ix["internship_id"],
                 interaction_type=InteractionType(ix["interaction_type"]),
             )
             db.add(interaction)
 
         db.commit()
-        print(f"✅ Loaded {len(interactions_data)} interactions")
-        print(f"\n🎉 Database seeded successfully!")
+        print(f"Loaded {len(interactions_data)} interactions")
+        print(f"\nDatabase seeded successfully!")
 
     except Exception as e:
         db.rollback()
-        print(f"❌ Error seeding database: {e}")
+        print(f"Error seeding database: {e}")
         raise
     finally:
         db.close()

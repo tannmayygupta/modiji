@@ -88,14 +88,21 @@ def extract_audio_from_video(video_bytes: bytes, original_filename: str) -> byte
     except subprocess.CalledProcessError as e:
         error_output = e.stderr.decode('utf-8', errors='ignore') if e.stderr else str(e)
         print(f"[VideoAnalysis] ffmpeg extraction failed: {error_output}")
-        # Only fallback if video is < 20MB, else it'll hit Groq's 413 anyway
-        if len(video_bytes) > 20 * 1024 * 1024:
-            raise ValueError(f"Video is too large ({len(video_bytes) // 1024 // 1024}MB) and we failed to compress it. Please upload a smaller video or ensure it is a valid format. Error: {error_output[:100]}")
+        if len(video_bytes) > 24 * 1024 * 1024:
+            raise ValueError(f"Video is too large ({len(video_bytes) // 1024 // 1024}MB). Max 24MB without ffmpeg installed.")
+        return video_bytes
+    except Exception as e:
+        print(f"[VideoAnalysis] ffmpeg not found or failed. Falling back to native video bytes. Error: {e}")
+        if len(video_bytes) > 24 * 1024 * 1024:
+            raise ValueError(f"Video is too large ({len(video_bytes) // 1024 // 1024}MB). Groq API limits to 25MB without FFmpeg compression. Please upload a shorter/compressed video.")
         return video_bytes
     finally:
         for p in [video_path, audio_path]:
             if os.path.exists(p):
-                os.unlink(p)
+                try:
+                    os.unlink(p)
+                except Exception:
+                    pass
 
 
 def transcribe_audio(audio_bytes: bytes, filename: str = "audio.mp3") -> dict:

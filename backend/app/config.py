@@ -2,6 +2,7 @@
 PM Internship Recommendation Engine - Backend Configuration
 """
 from pydantic_settings import BaseSettings
+from pydantic import model_validator
 from functools import lru_cache
 
 
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
     # Project
     PROJECT_NAME: str = "PM Internship Recommendation Engine"
     API_V1_PREFIX: str = "/api/v1"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # Database
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/pm_internship"
@@ -43,6 +44,13 @@ class Settings(BaseSettings):
 
     # CORS
     ALLOWED_ORIGINS: list[str] = ["*"]
+
+    @model_validator(mode='after')
+    def validate_secret_key(self) -> 'Settings':
+        if self.SECRET_KEY == "dev-secret-key-change-in-production":
+            import warnings
+            warnings.warn("⚠️  Using insecure default SECRET_KEY! Set SECRET_KEY in .env for production.")
+        return self
 
     class Config:
         env_file = ".env"

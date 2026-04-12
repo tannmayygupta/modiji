@@ -28,9 +28,10 @@ def _get_engine():
     global _hybrid_engine
     if _hybrid_engine is None:
         try:
-            from ml.engine.hybrid import HybridEngine
-            _hybrid_engine = HybridEngine(use_semantic=False)
-            logger.info("ML Hybrid Engine loaded successfully")
+            from ml.engine.hybrid_scorer import load_models, recommend
+            load_models()
+            _hybrid_engine = recommend  # Store the function itself
+            logger.info("Trained ML Hybrid Scorer loaded successfully")
         except Exception as e:
             logger.error(f"Failed to load ML engine: {e}")
     return _hybrid_engine
@@ -63,18 +64,18 @@ class RecommendationService:
         internship_dicts = [self._internship_to_dict(i) for i in internships]
 
         if not internship_dicts:
-            return []
+            logger.info("Database internships empty! Falling back to ML Cache for MVP.")
+            internship_dicts = None
 
         # Count candidate interactions for cold-start weight
         interaction_count = db.query(Interaction).filter(
             Interaction.candidate_id == candidate.id
         ).count()
 
-        # Run hybrid engine
-        recommendations = engine.recommend(
-            candidate_dict, internship_dicts,
-            interaction_count=interaction_count,
-            top_k=top_k,
+        # Run trained hybrid scorer
+        recommend_fn = engine
+        recommendations = recommend_fn(
+            candidate_dict, internships=internship_dicts, top_n=top_k,
         )
 
         # Convert to response models and save to DB
@@ -91,7 +92,8 @@ class RecommendationService:
                 explanation=rec_data.get("explanation", {}),
                 display_rank=rec_data.get("display_rank", 0),
             )
-            db.add(rec_record)
+            if internship_dicts is not None:
+                db.add(rec_record)
 
             explanation_data = rec_data.get("explanation", {})
             reasons = [
@@ -119,7 +121,12 @@ class RecommendationService:
             )
             cards.append(card)
 
-        db.commit()
+        if internship_dicts is not None:
+            try:
+                db.commit()
+            except Exception as e:
+                logger.error(f"Failed to save recommendations: {e}")
+                db.rollback()
         return cards
 
     def _candidate_to_dict(self, c: Candidate) -> dict:

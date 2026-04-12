@@ -219,13 +219,17 @@ async def upload_video_intro(
     # Before saving to DB, upload original video to Supabase so Admins can watch it
     from app.services.supabase_storage import upload_file_to_supabase
     
-    supabase_video_url = upload_file_to_supabase(
-        file_bytes=video_bytes,
-        file_name=file.filename or "video.mp4",
-        bucket_name="pmis-media",
-        folder_name="videos",
-        content_type=file.content_type or "video/mp4"
-    )
+    try:
+        supabase_video_url = upload_file_to_supabase(
+            file_bytes=video_bytes,
+            file_name=file.filename or "video.mp4",
+            bucket_name="pmis-media",
+            folder_name="videos",
+            content_type=file.content_type or "video/mp4"
+        )
+    except Exception as e:
+        print(f"Supabase video upload failed or skipped: {e}")
+        supabase_video_url = None
 
     # Save scores and URL to DB
     current_user.video_uploaded = True

@@ -24,16 +24,35 @@ const EDUCATION_LABELS: Record<string, string> = {
   "PG": "Post Graduate",
 };
 const COMMON_SKILLS = [
-  "Python", "JavaScript", "Communication", "Java", "SQL", "Excel",
-  "Marketing", "Data Analysis", "HR", "Sales", "React", "Node.js"
+  "Python", "JavaScript", "Java", "SQL", "React", "Node.js", "C++",
+  "Data Analysis", "Excel", "Communication", "Machine Learning",
+  "HTML/CSS", "Git", "MongoDB", "Django", "Flask", "REST API",
+  "AutoCAD", "Marketing", "Sales", "HR", "Content Writing",
+  "Graphic Design", "Video Editing", "UI/UX Design", "DevOps",
+  "Cloud Computing", "Networking", "Cybersecurity", "Power BI",
+  "Tally", "SAP", "Project Management", "Six Sigma",
 ];
 const SECTORS = [
-  "IT & Software", "Banking & Finance", "Healthcare", "Manufacturing",
-  "Retail & E-Commerce", "Education", "Marketing & Sales"
+  "IT & Software Development", "Banking & Financial Services",
+  "Healthcare", "Manufacturing & Industrial", "Automotive",
+  "Pharmaceutical", "Oil, Gas & Energy", "Telecom",
+  "Infrastructure & Construction", "FMCG",
+  "Retail & Consumer Durables", "Agriculture & Allied",
+  "Media, Entertainment & Education", "Consulting Services",
+  "Travel & Hospitality", "Chemical", "Metals & Mining",
+  "Aviation & Defence", "Textile Manufacturing",
+  "Cement & Building Materials", "Gems & Jewellery",
 ];
 const STATES = [
-  "Maharashtra", "Karnataka", "Delhi", "Tamil Nadu", "Uttar Pradesh",
-  "West Bengal", "Gujarat", "Rajasthan", "Madhya Pradesh", "Bihar"
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
+  "Chhattisgarh", "Goa", "Gujarat", "Haryana",
+  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala",
+  "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya",
+  "Mizoram", "Nagaland", "Odisha", "Punjab",
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Delhi", "Chandigarh", "Jammu & Kashmir", "Ladakh",
+  "Puducherry", "Andaman & Nicobar",
 ];
 
 function getToken() {
@@ -210,10 +229,12 @@ export function WizardFlow() {
     if (!file) return;
     setIsParsing(true);
     try {
+      const token = getToken();
       const formData = new FormData();
       formData.append("file", file);
       const response = await fetch(`${API}/resume/parse`, {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
       const data = await response.json();
@@ -265,9 +286,49 @@ export function WizardFlow() {
     }
   };
 
-  const handleNext = () => {
-    if (step < totalSteps) setStep(step + 1);
-    else router.push("/recommendations");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleNext = async () => {
+    if (step < totalSteps) {
+      setStep(step + 1);
+    } else {
+      // Final Step: Submit everything to backend
+      setIsSubmitting(true);
+      try {
+        const token = getToken();
+        if (!token) throw new Error("No token found");
+
+        const payload = {
+          education_level: educationLevel,
+          field_of_study: "Not Specified", // could be added to UI if needed
+          skills: skills,
+          state: stateName,
+          district: "Any", // Default or extract if we add district dropdown
+          location_preference: locationPref,
+          sector_preferences: sectorPreferences,
+          preferred_language: "en",
+        };
+
+        const res = await fetch(`${API}/candidates/me/wizard`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || "Failed to save profile");
+        }
+
+        router.push("/recommendations");
+      } catch (err: any) {
+        alert(err.message || "Error submitting profile");
+        setIsSubmitting(false);
+      }
+    }
   };
 
   if (authLoading) {
@@ -382,6 +443,8 @@ export function WizardFlow() {
                     <option value="10th_marksheet">10th Marksheet</option>
                     <option value="12th_marksheet">12th Marksheet</option>
                     <option value="diploma_certificate">Diploma Certificate</option>
+                    <option value="ug_semester_marksheet">UG Semester Marksheet (Undergrad)</option>
+                    <option value="pg_semester_marksheet">PG Semester Marksheet (Postgrad)</option>
                   </select>
                 </div>
 
@@ -444,12 +507,12 @@ export function WizardFlow() {
                   )}
                   
                   <h4 className="text-sm font-bold text-black dark:text-white mb-1">
-                    {uploadedResumeName ? "Resume Extracted" : "Upload Resume (PDF)"}
+                    {uploadedResumeName ? "ATS & NLP Extraction Complete" : "Upload Resume (PDF)"}
                   </h4>
                   
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4 max-w-[250px]">
                     {uploadedResumeName 
-                      ? `AI successfully parsed: ${uploadedResumeName}` 
+                      ? `Our ML model mapped ATS insights from: ${uploadedResumeName}` 
                       : "Our AI will extract your skills and education from your resume."}
                   </p>
                   
@@ -646,13 +709,15 @@ export function WizardFlow() {
               onClick={handleNext}
               className="w-32 rounded-none bg-black dark:bg-white text-white dark:text-black font-bold border-2 border-black dark:border-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
               disabled={
+                isSubmitting ||
+                (step === 1 && uploadedDocs.length === 0) ||
                 (step === 2 && !educationLevel) ||
                 (step === 3 && skills.length === 0) ||
                 (step === 4 && sectorPreferences.length === 0) ||
                 (step === 5 && (!stateName || !locationPref))
               }
             >
-              {step === totalSteps ? "EXECUTE" : "NEXT"}
+              {step === totalSteps ? (isSubmitting ? "EXECUTING..." : "EXECUTE") : "NEXT"}
             </Button>
           </CardFooter>
         )}

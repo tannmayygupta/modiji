@@ -172,23 +172,44 @@ class ContentBasedEngine:
             # Partial credit — larger gap = lower score
             return max(0.2, 1.0 - (r_rank - c_rank) * 0.25)
 
+    # Indian geographic regions for NEARBY matching
+    REGION_MAP = {
+        "north": ["delhi", "haryana", "himachal pradesh", "jammu & kashmir", "ladakh",
+                   "punjab", "rajasthan", "uttarakhand", "uttar pradesh", "chandigarh"],
+        "south": ["andhra pradesh", "karnataka", "kerala", "tamil nadu", "telangana",
+                   "puducherry", "andaman & nicobar", "lakshadweep"],
+        "east": ["bihar", "jharkhand", "odisha", "west bengal"],
+        "west": ["goa", "gujarat", "maharashtra", "dadra & nagar haveli"],
+        "central": ["chhattisgarh", "madhya pradesh"],
+        "northeast": ["arunachal pradesh", "assam", "manipur", "meghalaya",
+                       "mizoram", "nagaland", "sikkim", "tripura"],
+    }
+
+    def _get_region(self, state: str) -> str:
+        """Find region name for a given state."""
+        s = state.lower().strip()
+        for region, states in self.REGION_MAP.items():
+            if s in states:
+                return region
+        return "unknown"
+
     def compute_location_score(
         self,
         candidate_state: Optional[str],
         candidate_preference: Optional[str],
         internship_state: str,
         internship_city: Optional[str] = None,
-    ) -> float:
+    ) -> tuple[float, bool]:
         """
         Score based on geographic match and candidate location preference.
+        Returns (score, is_eligible) where is_eligible=False means HARD FILTER OUT.
 
-        Same state → 1.0
-        Adjacent state → 0.7
-        PAN_INDIA preference → min 0.6
-        Different state, HOME_STATE pref → 0.2
+        HOME_STATE  → same state only (hard filter)
+        NEARBY      → same region only (hard filter)
+        PAN_INDIA   → everything allowed
         """
         if not candidate_state:
-            return 0.5  # No preference = neutral
+            return 0.5, True  # No preference = neutral, eligible
 
         same_state = (
             candidate_state.lower().strip() == internship_state.lower().strip()
@@ -198,14 +219,23 @@ class ContentBasedEngine:
         pref = (candidate_preference or "HOME_STATE").upper()
 
         if same_state:
-            return 1.0
-        elif pref == "PAN_INDIA":
-            return 0.7
-        elif pref == "NEARBY":
-            # Simplified: check if states are in same region
-            return 0.5
-        else:  # HOME_STATE
-            return 0.2
+            return 1.0, True
+
+        if pref == "HOME_STATE":
+            # Hard filter: only same state allowed
+            return 0.0, False
+
+        if pref == "NEARBY":
+            # Check if same geographic region
+            c_region = self._get_region(candidate_state)
+            i_region = self._get_region(internship_state)
+            if c_region != "unknown" and c_region == i_region:
+                return 0.8, True
+            else:
+                return 0.0, False
+
+        # PAN_INDIA: everything eligible
+        return 0.6, True
 
     def compute_sector_score(
         self,
@@ -283,7 +313,7 @@ class ContentBasedEngine:
         )
 
         # Location
-        loc_score = self.compute_location_score(
+        loc_score, location_eligible = self.compute_location_score(
             candidate.get("state"),
             candidate.get("location_preference"),
             internship.get("state", ""),
@@ -295,6 +325,12 @@ class ContentBasedEngine:
             candidate.get("sector_preferences", []),
             internship.get("sector", ""),
         )
+
+        # Sector eligibility: if candidate has sector prefs and score is very low, filter out
+        sector_eligible = True
+        if candidate.get("sector_preferences") and len(candidate["sector_preferences"]) > 0:
+            if sector_score <= 0.2:
+                sector_eligible = False
 
         # Field of study
         field_score = self.compute_field_score(
@@ -321,6 +357,8 @@ class ContentBasedEngine:
             },
             "skill_alignment": skill_alignment,
             "weights": WEIGHTS,
+            "location_eligible": location_eligible,
+            "sector_eligible": sector_eligible,
         }
 
         return round(final_score, 4), metadata
@@ -343,3 +381,29 @@ class ContentBasedEngine:
 
         results.sort(key=lambda x: x[1], reverse=True)
         return results
+
+def compute_affirmative_boost(candidate: dict) -> tuple[float, list]:
+    boost = 0.0
+    breakdown = []
+    
+    if candidate.get("social_category") in ["SC", "ST", "OBC"]:
+        boost += 0.05
+        breakdown.append({"reason": "Social category representation boost (+5%)"})
+        
+    if candidate.get("is_rural"):
+        boost += 0.03
+        breakdown.append({"reason": "Rural background uplift (+3%)"})
+        
+    if candidate.get("is_aspirational_district"):
+        boost += 0.03
+        breakdown.append({"reason": "Aspirational District uplift (+3%)"})
+        
+    return min(boost, 0.15), breakdown
+
+def compute_video_bonus(candidate: dict) -> float:
+    if not candidate.get("video_uploaded"):
+        return 0.0
+    score = candidate.get("video_overall_score", 0)
+    if not score:
+        return 0.0
+    return (score / 100.0) * 0.10

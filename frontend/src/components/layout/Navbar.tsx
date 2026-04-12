@@ -87,7 +87,7 @@ export function Navbar() {
                 <Link href="/login" className="text-xs font-black uppercase text-black dark:text-white hover:underline px-2 tracking-widest">
                   Login
                 </Link>
-                <Link href="/wizard" className="bg-black dark:bg-white text-white dark:text-black text-xs font-black uppercase px-6 py-2 sm:py-3 border-2 border-black dark:border-white hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white hover:translate-x-[2px] hover:translate-y-[2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-none transition-all">
+                <Link href="/login" className="bg-black dark:bg-white text-white dark:text-black text-xs font-black uppercase px-6 py-2 sm:py-3 border-2 border-black dark:border-white hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white hover:translate-x-[2px] hover:translate-y-[2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-none transition-all">
                   Initialize
                 </Link>
               </>

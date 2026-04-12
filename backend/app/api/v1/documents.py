@@ -24,7 +24,7 @@ router = APIRouter()
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "uploads", "documents")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-ALLOWED_DOC_TYPES = ["10th_marksheet", "12th_marksheet", "diploma_certificate"]
+ALLOWED_DOC_TYPES = ["10th_marksheet", "12th_marksheet", "diploma_certificate", "ug_semester_marksheet", "pg_semester_marksheet"]
 ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 
