@@ -113,7 +113,3 @@ To protect user data, the Administrative Document Verification queue is delibera
 - **Default Target:** `modiji / Modiji123`
 
 *(This panel directly interfaces with Supabase S3 file signatures, allowing validation of Aadhaar, 10th, 12th, and Diploma documents.)*
-
-## Team Attributes
-- Tanmay Gupta | Aarya Bhangadia | Rounak Nagwani | Sahil Roy | Paras Sharma
-- Shri Ramdeobaba College of Engineering and Management, Nagpur
