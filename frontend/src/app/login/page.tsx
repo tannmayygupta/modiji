@@ -85,6 +85,12 @@ export default function LoginPage() {
             </div>
           </div>
 
+          <div className="border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 p-4 mb-6 text-sm font-medium text-blue-800 dark:text-blue-200 shadow-[4px_4px_0px_0px_rgba(59,130,246,0.5)]">
+            <strong> Demo Mode:</strong> Firebase OTP delivery is currently disabled due to plan limits.
+            <br className="mb-2" />
+            Please enter <strong>any 10-digit mobile number</strong> and use the default OTP <strong className="bg-blue-200 dark:bg-blue-800 px-1 py-0.5 rounded text-black dark:text-white tracking-widest border border-blue-400">123456</strong> to test the application.
+          </div>
+
           {error && (
             <div className="border-2 border-red-500 bg-red-50 dark:bg-red-900/20 p-3 mb-6 text-sm font-bold text-red-700 dark:text-red-400">
               {error}

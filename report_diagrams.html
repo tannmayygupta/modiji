@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaushalya Architecture Diagrams</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose', 
+            themeVariables: {
+                fontFamily: 'Inter, system-ui, sans-serif',
+                primaryColor: '#eef2ff',
+                primaryTextColor: '#1e1b4b',
+                primaryBorderColor: '#6366f1',
+                lineColor: '#4f46e5',
+                secondaryColor: '#f0fdf4',
+                tertiaryColor: '#fffbeb'
+            }
+        });
+    </script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; padding: 40px; color: #334155; }
+        .diagram-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 40px; text-align: center; }
+        h2 { color: #0f172a; margin-bottom: 20px; font-size: 1.5rem; }
+        p.desc { color: #64748b; margin-bottom: 30px; }
+        .mermaid { display: flex; justify-content: center; }
+    </style>
+</head>
+<body>
+    <h1>Kaushalya - Project Report Diagrams</h1>
+    <p>Open this file in your browser. Right-click each diagram and select "Save image as..." or use the Snipping Tool (Win+Shift+S) to take screenshots for your Word document.</p>
+
+    <!-- Fig 4.1 -->
+    <div class="diagram-container">
+        <h2>Fig 4.1: High-Level System Architecture Diagram</h2>
+        <div class="mermaid">
+        flowchart TD
+            subgraph Frontend [Presentation Layer - Vercel]
+                UI[Next.js 14 App Router]
+                AuthUI[Firebase OTP Auth]
+            end
+
+            subgraph Backend [Application Layer - Render]
+                API[FastAPI Backend]
+                AuthService[JWT Authentication]
+                RecService[Recommendation Service]
+                VideoService[Video Processing]
+            end
+
+            subgraph Database [Data Layer - Supabase]
+                DB[(PostgreSQL 15)]
+                Storage[Supabase Storage]
+            end
+
+            subgraph AI_Services [External Intelligence]
+                Groq[Groq Cloud API]
+                ML[ML Hybrid Engine]
+            end
+
+            UI <-->|REST API / JSON| API
+            AuthUI -->|Token Verify| AuthService
+            
+            API <-->|SQLAlchemy ORM| DB
+            VideoService -->|Audio Stream| Groq
+            Groq -->|JSON Scores| API
+            
+            UI -->|Upload PDF/Video| Storage
+            RecService <-->|Candidate Data| ML
+            ML -->|Ranked Internships| RecService
+        </div>
+    </div>
+
+    <!-- Fig 4.2 -->
+    <div class="diagram-container">
+        <h2>Fig 4.2: ML Hybrid Scoring Pipeline Flowchart</h2>
+        <div class="mermaid">
+        flowchart TD
+            Start([Candidate Profile + Internships]) --> Split{Warm or Cold Start?}
+            
+            Split -->|< 3 Interactions| Cold[Pure Content-Based]
+            Split -->|>= 3 Interactions| Warm[Hybrid Mode]
+
+            Cold --> CB[Content-Based Engine]
+            Warm --> CB
+            Warm --> CF[Collaborative Filtering Engine SVD]
+
+            CB -->|Skills 35%<br>Edu 20%<br>Loc 20%<br>Sector 15%<br>Field 10%| CS[Content Score]
+            CF -->|Matrix Factorisation| CFS[Collaborative Score]
+
+            CS --> Combine
+            CFS --> Combine[Hybrid Combine: 60% CB + 40% CF]
+            
+            Cold --> CS
+            CS --> Combine_Cold[100% CB]
+
+            Combine --> AAB[Affirmative Action Boost]
+            Combine_Cold --> AAB
+            
+            AAB -->|Demographic Logic| VB[Video Communication Bonus]
+            VB -->|Groq Whisper + Llama| Final[Final Score Calculation]
+            
+            Final --> Explain[Generate Explainability Reasons]
+            Explain --> End([Top-K Recommendations])
+        </div>
+    </div>
+
+    <!-- Fig 4.4 -->
+    <div class="diagram-container">
+        <h2>Fig 4.4: Video Analysis Pipeline – Groq Whisper + Llama 3.3</h2>
+        <div class="mermaid">
+        flowchart LR
+            Upload[User Uploads Video<br>MP4/WebM 50MB] --> FF[FFmpeg Audio Extraction]
+            FF -->|Compresses to| Audio[64kbps Mono MP3<br>~1MB]
+            Audio --> Whisper[Groq Whisper V3 Turbo]
+            Whisper -->|Generates| Transcript[Text Transcript]
+            Transcript --> Llama[Groq Llama 3.3 70B]
+            Llama -->|Semantic Analysis| JSON[JSON Scores]
+            JSON -->|Confidence, Clarity,<br>Communication| DB[(PostgreSQL)]
+        </div>
+    </div>
+
+    <!-- Fig 4.5 -->
+    <div class="diagram-container">
+        <h2>Fig 4.5: Database Entity-Relationship Diagram</h2>
+        <div class="mermaid">
+        erDiagram
+            CANDIDATE ||--o{ INTERACTION : has
+            CANDIDATE ||--o{ RECOMMENDATION : receives
+            CANDIDATE ||--o{ CANDIDATE_DOCUMENT : uploads
+            INTERNSHIP ||--o{ INTERACTION : receives
+            INTERNSHIP ||--o{ RECOMMENDATION : included_in
+
+            CANDIDATE {
+                uuid id PK
+                string name
+                string email
+                string phone
+                int auth_step
+                json skills
+                string state
+                enum social_category
+            }
+
+            INTERNSHIP {
+                uuid id PK
+                string company_name
+                string role_title
+                string sector
+                int stipend_amount
+                float fraud_risk_score
+            }
+
+            INTERACTION {
+                uuid id PK
+                uuid candidate_id FK
+                uuid internship_id FK
+                enum interaction_type
+                timestamp created_at
+            }
+
+            RECOMMENDATION {
+                uuid id PK
+                uuid candidate_id FK
+                uuid internship_id FK
+                float match_percentage
+                json explanation
+            }
+
+            CANDIDATE_DOCUMENT {
+                uuid id PK
+                uuid candidate_id FK
+                string file_path
+                enum status
+            }
+        </div>
+    </div>
+</body>
+</html>
