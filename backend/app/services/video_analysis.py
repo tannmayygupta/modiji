@@ -175,7 +175,7 @@ def analyze_transcript(transcript: str, duration_seconds: int, word_count: int) 
     )
     
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="llama-3.1-8b-instant",
         messages=[
             {
                 "role": "system",
