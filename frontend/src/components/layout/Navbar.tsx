@@ -53,14 +53,24 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b-2 border-black dark:border-white bg-white/90 dark:bg-[#0a0a0a]/90 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container flex h-16 items-center px-4 max-w-6xl mx-auto">
-        <Link href="/" className="flex items-center space-x-2">
-          <svg className="w-8 h-8 text-black dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <Link href="/" className="flex items-center gap-2.5" aria-label="Kaushalya — home">
+          <svg className="w-8 h-8 text-black dark:text-white shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
             <path d="M18 14h-8" />
             <path d="M15 18h-5" />
             <path d="M10 6h8v4h-8V6Z" />
           </svg>
-          <span className="font-black uppercase tracking-widest sm:inline-block text-black dark:text-white">PMIS Allocation</span>
+          <span className="flex flex-col leading-none">
+            <span className="font-black uppercase tracking-widest text-black dark:text-white">
+              Kaushalya
+            </span>
+            <span
+              className="nb-devanagari text-[11px] font-medium tracking-wide text-gray-600 dark:text-gray-400 mt-0.5"
+              lang="hi"
+            >
+              कौशल्य
+            </span>
+          </span>
         </Link>
         <div className="flex flex-1 items-center justify-end space-x-2 sm:space-x-4">
           <button 

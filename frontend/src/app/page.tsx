@@ -1,306 +1,444 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ShieldAlert, Fingerprint, Database, Sparkles, MapPin, Building2, Globe, Mail, Phone, ArrowUpRight, Code, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  ShieldCheck, FileText, GraduationCap, Lightbulb, Camera, Cpu,
+  Building2, MapPin, IndianRupee, ChevronDown, CheckCircle2, ArrowUpRight,
+} from "lucide-react";
+import { STATES, SECTORS, EDUCATION_LEVELS, WIZARD_TOTAL_STEPS } from "@/lib/constants";
+
+/* Shared reveal. Matches the wizard's motion budget: short fade + 20px rise,
+   once, no loops. */
+const reveal = {
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.4, ease: "easeOut" as const },
+};
+
+/* Counts are read from the same arrays the wizard renders, so nothing here
+   can claim a number the product doesn't actually offer. */
+const STATS = [
+  { value: `${STATES.length}`, label: "States & UTs" },
+  { value: `${SECTORS.length}`, label: "Sectors" },
+  { value: `${EDUCATION_LEVELS.length}`, label: "Education levels" },
+  { value: `${WIZARD_TOTAL_STEPS}`, label: "Steps to finish" },
+];
+
+const STEPS = [
+  {
+    icon: ShieldCheck,
+    title: "Verify your identity",
+    body: "Download your offline e-KYC file from myaadhaar.uidai.gov.in and upload it with your 4-digit share code.",
+  },
+  {
+    icon: FileText,
+    title: "Upload your marksheets",
+    body: "10th, 12th, diploma or degree. An administrator checks each one against the name on your Aadhaar record.",
+  },
+  {
+    icon: GraduationCap,
+    title: "Add your education",
+    body: "Pick your highest qualification, or upload a resume and let the parser fill it in for you.",
+  },
+  {
+    icon: Lightbulb,
+    title: "Choose skills & sectors",
+    body: "Up to 5 skills, up to 3 industries, and how far from home you're willing to work.",
+  },
+  {
+    icon: Camera,
+    title: "Record a short intro",
+    body: "Two to three minutes about yourself. It's transcribed and scored for clarity and confidence.",
+  },
+  {
+    icon: Cpu,
+    title: "Get your matches",
+    body: "Ranked internships with a match score, and the specific reasons behind every single one.",
+  },
+];
+
+const CAPABILITIES = [
+  {
+    n: "01",
+    title: "Your Aadhaar number is never stored",
+    body: "Verification reads the UIDAI-signed offline XML you upload and checks the signature. We keep the result of that check — not the credential. There is no OTP flow to intercept and no number sitting in our database.",
+  },
+  {
+    n: "02",
+    title: "Documents are checked by a person",
+    body: "Uploaded marksheets enter an admin review queue and are matched against your verified Aadhaar name before you can apply anywhere.",
+  },
+  {
+    n: "03",
+    title: "Every match explains itself",
+    body: "Each recommendation lists which of your skills matched, which partly matched, and which are missing — plus location and sector reasoning.",
+  },
+  {
+    n: "04",
+    title: "Your intro video counts",
+    body: "The audio is transcribed and scored for clarity and confidence. That score feeds into your ranking, so how you present yourself matters.",
+  },
+];
+
+/* Grid dividers for the stats strip: 2 columns on mobile, 4 on desktop.
+   Built so no two conflicting width utilities ever land on the same element
+   (Tailwind resolves those by stylesheet order, not class order). */
+function statCellBorders(i: number) {
+  const cls: string[] = [];
+  if (i % 2 === 1) cls.push("border-l-2");
+  else if (i > 0) cls.push("md:border-l-2");
+  if (i >= 2) cls.push("border-t-2 md:border-t-0");
+  return cls.join(" ");
+}
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center relative z-10 w-full overflow-hidden bg-[#fdfbf6] dark:bg-[#060608] text-[#111] dark:text-[#f0f0f0] transition-colors duration-500 font-sans">
-      
-      {/* ================= BACKGROUND ANIMATIONS ================= */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Animated Orbs */}
-        <motion.div 
-          animate={{ y: [0, -80, 0], x: [0, 50, 0], scale: [1, 1.2, 1] }} 
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-indigo-500/10 dark:bg-indigo-600/20 rounded-full blur-[120px]"
-        />
-        <motion.div 
-          animate={{ y: [0, 100, 0], x: [0, -70, 0], scale: [1, 1.5, 1] }} 
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute top-40 -right-40 w-[700px] h-[700px] bg-purple-500/10 dark:bg-purple-800/20 rounded-full blur-[150px]"
-        />
-        <motion.div 
-          animate={{ y: [0, -40, 0], x: [0, -40, 0] }} 
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] bg-blue-500/10 dark:bg-blue-600/10 rounded-full blur-[120px]"
-        />
-        {/* Crisp Technical Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px]"></div>
-      </div>
+    <div className="w-full relative z-10">
 
-      {/* ================= ASYMMETRICAL HERO SECTION ================= */}
-      <section className="w-full relative z-10 pt-32 pb-24 min-h-[90vh] flex items-center">
-        <div className="container px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-          
-          {/* Left Hero Content */}
-          <div className="lg:col-span-7 flex flex-col items-start space-y-8 text-left">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 dark:border-gray-800 bg-white/40 dark:bg-black/40 backdrop-blur-md text-xs font-bold uppercase tracking-[0.2em] shadow-sm"
+      {/* ================================ HERO ================================ */}
+      <section className="w-full px-4 sm:px-6 pt-16 pb-20 md:pt-24 md:pb-28">
+        <div className="container max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-14 lg:gap-12 items-center">
+
+          {/* ---- Left: the pitch ---- */}
+          <div className="lg:col-span-7">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2 nb-panel nb-shadow-sm px-4 py-2 mb-8"
             >
-              <Sparkles size={14} className="text-indigo-500" /> Ministry of Corporate Affairs
+              <ShieldCheck size={14} className="text-black dark:text-white" />
+              <span className="nb-label text-black dark:text-white">
+                Ministry of Corporate Affairs
+              </span>
             </motion.div>
 
-            {/* Split Meeting Animation for Title */}
-            <h1 className="text-5xl sm:text-6xl md:text-[5.5rem] font-black tracking-tighter leading-[0.9] flex flex-col overflow-visible">
-              <div className="flex flex-wrap gap-x-2 sm:gap-x-4">
-                <motion.span 
-                  initial={{ opacity: 0, x: -150, filter: "blur(10px)" }} 
-                  animate={{ opacity: 1, x: 0, filter: "blur(0px)" }} 
-                  transition={{ duration: 1, type: "spring", bounce: 0.2 }}
-                  className="inline-block"
-                >
-                  PM
-                </motion.span>
-                <motion.span 
-                  initial={{ opacity: 0, x: 150, filter: "blur(10px)" }} 
-                  animate={{ opacity: 1, x: 0, filter: "blur(0px)" }} 
-                  transition={{ duration: 1, type: "spring", bounce: 0.2, delay: 0.1 }}
-                  className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400"
-                >
-                  INTERNSHIP
-                </motion.span>
-              </div>
-              <motion.span 
-                initial={{ opacity: 0, y: 50, filter: "blur(10px)" }} 
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} 
-                transition={{ duration: 1, type: "spring", bounce: 0.2, delay: 0.2 }}
-                className="inline-block mt-2"
-              >
-                ALLOCATION
-              </motion.span>
-            </h1>
-            
-            <motion.p 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.6 }}
-              className="max-w-[550px] text-gray-600 dark:text-gray-400 md:text-xl font-medium leading-relaxed"
+            <motion.h1
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="nb-h text-[clamp(2.5rem,8vw,5rem)] leading-[0.92] text-black dark:text-white"
             >
-              A high-precision matchmaking engine. Fusing secure Aadhaar SSO with real-time NLP skill extraction to route top talent into vetted enterprise infrastructure.
+              Government
+              <br />
+              internships
+              <br />
+              <span className="nb-invert inline-block px-3 py-0.5 mt-2">
+                matched to you
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="mt-8 max-w-xl text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-400"
+            >
+              Verify yourself once with offline Aadhaar e-KYC and upload your
+              marksheets. We match you against verified internships across India
+              and tell you, in plain words, why each one fits.
             </motion.p>
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.8 }}
-              className="flex flex-col sm:flex-row gap-4 pt-4 w-full sm:w-auto"
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.35 }}
+              className="mt-10 flex flex-col sm:flex-row gap-4"
             >
-              <Link href="/wizard" className="w-full sm:w-auto">
-                <Button size="lg" className="h-16 px-10 text-lg w-full font-bold rounded-2xl bg-black dark:bg-white text-white dark:text-black hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center gap-3">
-                  Initialise Protocol <ArrowUpRight className="h-5 w-5" />
-                </Button>
+              <Link
+                href="/login"
+                className="nb-invert nb-shadow-sm nb-press h-14 px-8 border-2 border-black dark:border-white inline-flex items-center justify-center gap-2 font-black uppercase tracking-wide"
+              >
+                Start your application
+                <ArrowUpRight className="h-5 w-5" />
+              </Link>
+              <Link
+                href="#how"
+                className="nb-panel nb-press h-14 px-8 inline-flex items-center justify-center gap-2 font-black uppercase tracking-wide text-black dark:text-white"
+              >
+                How it works
+                <ChevronDown className="h-5 w-5" />
               </Link>
             </motion.div>
+
+            <motion.ul
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+              className="mt-10 flex flex-wrap gap-x-6 gap-y-2"
+            >
+              {[
+                "Offline Aadhaar e-KYC",
+                "Aadhaar number never stored",
+                "Documents reviewed by an admin",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-green-600 dark:text-green-500 shrink-0" />
+                  <span className="nb-label">{item}</span>
+                </li>
+              ))}
+            </motion.ul>
           </div>
 
-          {/* Right Hero Interactive Graphic */}
-          <div className="lg:col-span-5 relative hidden md:block">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8, rotateY: 20 }} animate={{ opacity: 1, scale: 1, rotateY: 0 }} 
-              transition={{ duration: 1.2, ease: "easeOut", delay: 0.4 }}
-              className="relative w-full aspect-square max-w-md mx-auto"
+          {/* ---- Right: the actual product, not an abstraction ---- */}
+          <div className="lg:col-span-5">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              {/* Glassmorphic Main Card */}
-              <div className="absolute inset-0 bg-white/20 dark:bg-black/20 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-[2rem] shadow-2xl p-8 flex flex-col justify-between overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/30 blur-[60px] rounded-full -translate-y-1/2 translate-x-1/3"></div>
-                
-                <div>
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="h-12 w-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                      <Zap className="text-indigo-600 dark:text-indigo-400" />
+              <p className="nb-label mb-3">Sample match</p>
+              <SampleMatchCard />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* =============================== STATS =============================== */}
+      <section className="w-full px-4 sm:px-6 pb-20 md:pb-28">
+        <div className="container max-w-6xl mx-auto">
+          <motion.dl {...reveal} className="nb-panel nb-shadow-lg grid grid-cols-2 md:grid-cols-4">
+            {STATS.map((stat, i) => (
+              <div
+                key={stat.label}
+                className={`p-6 sm:p-8 border-black dark:border-white ${statCellBorders(i)}`}
+              >
+                <dd className="nb-h text-4xl sm:text-5xl text-black dark:text-white">
+                  {stat.value}
+                </dd>
+                <dt className="nb-label mt-2">{stat.label}</dt>
+              </div>
+            ))}
+          </motion.dl>
+        </div>
+      </section>
+
+      {/* ============================ HOW IT WORKS ============================ */}
+      <section id="how" className="w-full px-4 sm:px-6 pb-20 md:pb-28 scroll-mt-24">
+        <div className="container max-w-6xl mx-auto">
+          <motion.div {...reveal} className="mb-12">
+            <p className="nb-label mb-3">The process</p>
+            <h2 className="nb-h text-3xl sm:text-4xl md:text-5xl text-black dark:text-white">
+              Six steps, start to finish
+            </h2>
+            <p className="mt-4 max-w-2xl text-base font-medium text-gray-600 dark:text-gray-400">
+              You can stop after any step and pick up where you left off. Nothing
+              is lost between sessions.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {STEPS.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <motion.div
+                  key={step.title}
+                  {...reveal}
+                  transition={{ duration: 0.4, delay: (i % 3) * 0.08, ease: "easeOut" }}
+                  className="nb-panel nb-shadow-md p-7 flex flex-col"
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="nb-invert p-3">
+                      <Icon size={24} strokeWidth={2} />
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold">98.4% Match</span>
+                    <span className="nb-h text-4xl text-gray-300 dark:text-gray-700 leading-none" aria-hidden="true">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                   </div>
-                  <h3 className="text-2xl font-black mb-2">Algorithm Active</h3>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Processing real-time candidate NLP vectors across 4,200+ enterprise postings.</p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 2, delay: 1 }} className="h-full bg-indigo-600"></motion.div>
-                  </div>
-                  <div className="h-2 w-3/4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 2, delay: 1.2 }} className="h-full bg-purple-600"></motion.div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating Element 1 */}
-              <motion.div 
-                animate={{ y: [-10, 10, -10] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -right-12 top-12 p-4 bg-white/80 dark:bg-[#111]/80 backdrop-blur-lg border border-gray-100 dark:border-gray-800 rounded-2xl shadow-xl flex items-center gap-3"
-              >
-                <Database className="text-blue-500" />
-                <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase">Data Source</p>
-                  <p className="text-sm font-black">DigiLocker SSO</p>
-                </div>
-              </motion.div>
-
-              {/* Floating Element 2 */}
-              <motion.div 
-                animate={{ y: [10, -10, 10] }} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -left-12 bottom-20 p-4 bg-white/80 dark:bg-[#111]/80 backdrop-blur-lg border border-gray-100 dark:border-gray-800 rounded-2xl shadow-xl flex items-center gap-3"
-              >
-                <Code className="text-purple-500" />
-                <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase">Engine</p>
-                  <p className="text-sm font-black">Hybrid Scoring</p>
-                </div>
-              </motion.div>
-            </motion.div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ================= BENTO GRID FEATURES ================= */}
-      <section className="w-full py-32 px-6 relative z-10">
-        <div className="container max-w-7xl mx-auto">
-          <div className="mb-16">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">Uncompromising Architecture.</h2>
-            <p className="text-lg text-gray-500 font-medium max-w-xl">A complete departure from legacy systems. Engineered purely for speed, accuracy, and enterprise-grade scale.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[300px]">
-            
-            {/* Bento Block 1 - Large */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-              className="md:col-span-8 group bg-white dark:bg-[#0c0c0c] border border-gray-200 dark:border-gray-800 rounded-[2rem] p-10 relative overflow-hidden hover:border-black dark:hover:border-white transition-colors duration-500 flex flex-col justify-end"
-            >
-              <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-5 transition-opacity duration-700 pointer-events-none transform scale-150 -translate-y-10 translate-x-10">
-                <Fingerprint className="w-full h-full" />
-              </div>
-              <div className="mb-auto">
-                <div className="h-14 w-14 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-                  <Fingerprint className="text-indigo-600 dark:text-indigo-400" size={28} />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-3xl font-black mb-3">Absolute Verification</h3>
-                <p className="text-gray-500 dark:text-gray-400 font-medium max-w-md">100% cryptographic certainty. Digilocker SSO auto-fetches authenticated Academic records, destroying any possibility of resume forgery.</p>
-              </div>
-            </motion.div>
-
-            {/* Bento Block 2 - Tall */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1 }}
-              className="md:col-span-4 md:row-span-2 group bg-zinc-900 dark:bg-[#111] border border-zinc-800 rounded-[2rem] p-10 relative overflow-hidden text-white flex flex-col justify-end"
-            >
-               <div className="absolute top-0 right-0 w-full h-[50%] bg-gradient-to-b from-indigo-500/20 to-transparent"></div>
-               <div className="mb-auto">
-                <div className="h-14 w-14 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-                  <ShieldAlert className="text-white" size={28} />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-3xl font-black mb-3">AI Fraud Engine</h3>
-                <p className="text-zinc-400 font-medium">NLP strictly analyzes corporate postings in real-time. Unrealistic stipends, spam matrices, or exploitation keywords are instantly segregated from the network.</p>
-              </div>
-            </motion.div>
-
-            {/* Bento Block 3 - Medium */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }}
-              className="md:col-span-4 group bg-white dark:bg-[#0c0c0c] border border-gray-200 dark:border-gray-800 rounded-[2rem] p-10 relative overflow-hidden hover:border-black dark:hover:border-white transition-colors duration-500 flex flex-col justify-end"
-            >
-              <div className="mb-auto">
-                <div className="h-14 w-14 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
-                  <Database className="text-purple-600 dark:text-purple-400" size={28} />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-2xl font-black mb-2">Hybrid ML</h3>
-                <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">Deep collaborative filtering maps user matrices into high-response probability roles.</p>
-              </div>
-            </motion.div>
-
-            {/* Bento Block 4 - Medium */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.3 }}
-              className="md:col-span-4 group bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 rounded-[2rem] p-10 relative overflow-hidden flex flex-col justify-end"
-            >
-              <div className="mb-auto">
-                <div className="h-14 w-14 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
-                  <ArrowUpRight className="text-white" size={28} />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-2xl font-black mb-2 text-indigo-950 dark:text-indigo-100">Video Synthesis</h3>
-                <p className="text-indigo-700/80 dark:text-indigo-300/80 font-medium text-sm">Automated Llama 3.3 speech-to-text pipeline analyzes your intro video for communication confidence boosting scores by up to 15%.</p>
-              </div>
-            </motion.div>
-
+                  <h3 className="nb-h text-lg mb-2 text-black dark:text-white">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm font-medium leading-relaxed text-gray-600 dark:text-gray-400">
+                    {step.body}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ================= COMPREHENSIVE ELITE FOOTER ================= */}
-      <footer className="w-full bg-white dark:bg-[#050505] border-t border-gray-200 dark:border-gray-800 pt-24 pb-12 relative z-10">
-        <div className="container px-6 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-20">
-            
-            {/* Brand Logo & description */}
-            <div className="lg:col-span-4 space-y-6">
-              <div className="flex items-center gap-3 font-black text-2xl tracking-tighter">
-                <div className="h-10 w-10 bg-black dark:bg-white rounded-lg flex items-center justify-center">
-                  <Building2 className="text-white dark:text-black h-5 w-5" />
+      {/* =========================== WHAT YOU GET ============================ */}
+      <section className="w-full px-4 sm:px-6 pb-20 md:pb-28">
+        <div className="container max-w-6xl mx-auto">
+          <motion.div {...reveal} className="mb-12">
+            <p className="nb-label mb-3">What makes it different</p>
+            <h2 className="nb-h text-3xl sm:text-4xl md:text-5xl text-black dark:text-white">
+              Verified, not self-reported
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {CAPABILITIES.map((cap, i) => (
+              <motion.article
+                key={cap.n}
+                {...reveal}
+                transition={{ duration: 0.4, delay: (i % 3) * 0.08, ease: "easeOut" }}
+                className={`nb-panel nb-shadow-md p-8 ${i === 0 ? "lg:col-span-3" : ""}`}
+              >
+                <div className="flex items-baseline gap-4 mb-4">
+                  <span className="nb-h text-2xl text-black dark:text-white shrink-0">
+                    {cap.n}
+                  </span>
+                  <span className="flex-1 nb-rule" aria-hidden="true" />
                 </div>
-                PMIS SUITE
-              </div>
-              <p className="text-gray-500 dark:text-gray-400 font-medium leading-relaxed max-w-sm">
-                The fastest, most secure way to bridge the gap between fresh talent and top-tier corporate infrastructure. Built for the modern enterprise ecosystem.
+                <h3
+                  className={`nb-h mb-3 text-black dark:text-white ${
+                    i === 0 ? "text-2xl sm:text-3xl" : "text-xl"
+                  }`}
+                >
+                  {cap.title}
+                </h3>
+                <p
+                  className={`font-medium leading-relaxed text-gray-600 dark:text-gray-400 ${
+                    i === 0 ? "text-base max-w-3xl" : "text-sm"
+                  }`}
+                >
+                  {cap.body}
+                </p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============================= FINAL CTA ============================== */}
+      <section className="w-full nb-invert">
+        <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-20 md:py-24">
+          <motion.div
+            {...reveal}
+            className="flex flex-col lg:flex-row lg:items-end justify-between gap-10"
+          >
+            <div>
+              <h2 className="nb-h text-3xl sm:text-4xl md:text-5xl leading-[0.95] max-w-2xl">
+                Ready when you are
+              </h2>
+              <p className="mt-4 text-base font-medium opacity-80 max-w-xl">
+                All you need to begin is a mobile number. You can add your
+                documents and video whenever you're ready.
               </p>
-              <div className="flex items-center gap-3 pt-4">
-                <div className="h-10 w-10 flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-800 hover:border-indigo-500 hover:text-indigo-500 transition-colors cursor-pointer"><Globe size={18} /></div>
-                <div className="h-10 w-10 flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-800 hover:border-indigo-500 hover:text-indigo-500 transition-colors cursor-pointer"><Mail size={18} /></div>
-                <div className="h-10 w-10 flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-800 hover:border-indigo-500 hover:text-indigo-500 transition-colors cursor-pointer"><Phone size={18} /></div>
-              </div>
             </div>
-
-            {/* Platform Links */}
-            <div className="lg:col-span-2 lg:col-start-7">
-              <h4 className="font-bold mb-8 tracking-tight text-lg">Platform</h4>
-              <ul className="space-y-4 font-medium text-gray-500 dark:text-gray-400">
-                <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors flex items-center gap-2 group">How it Works <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0"/></a></li>
-                <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors flex items-center gap-2 group">Applicant SSO <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0"/></a></li>
-                <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors flex items-center gap-2 group">Enterprise Console <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0"/></a></li>
-                <li><a href="#" className="hover:text-black dark:hover:text-white transition-colors flex items-center gap-2 group">Neural Matching <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0"/></a></li>
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div className="lg:col-span-3">
-              <h4 className="font-bold mb-8 tracking-tight text-lg">Communications</h4>
-              <div className="space-y-6 font-medium text-gray-500 dark:text-gray-400">
-                <div className="flex items-start gap-4">
-                  <MapPin size={20} className="text-black dark:text-white shrink-0 mt-1" />
-                  <p>Shastri Bhawan<br/>Dr. Rajendra Prasad Rd<br/>New Delhi, India</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Mail size={20} className="text-black dark:text-white shrink-0" />
-                  <p>exec@pmis.gov.in</p>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <div className="pt-8 border-t border-gray-200 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-            <p>© {new Date().getFullYear()} Ministry of Corporate Affairs Core.</p>
-            <div className="flex gap-6">
-              <span className="hover:text-black dark:hover:text-white cursor-pointer transition-colors">Privacy Paradigm</span>
-              <span className="hover:text-black dark:hover:text-white cursor-pointer transition-colors">Terms of Service</span>
-            </div>
-            <div className="flex items-center gap-2">
-               <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)] animate-pulse"></div>
-               Systems Operational
-            </div>
-          </div>
-          
+            <Link
+              href="/login"
+              className="shrink-0 h-16 px-10 inline-flex items-center justify-center gap-2 bg-white text-black dark:bg-black dark:text-white border-2 border-white dark:border-black font-black uppercase tracking-wide text-lg nb-press"
+            >
+              Start now
+              <ArrowUpRight className="h-5 w-5" />
+            </Link>
+          </motion.div>
         </div>
-      </footer>
+      </section>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   A static, non-interactive replica of the real RecommendationCard. Same
+   grammar as /recommendations — company line, verified badge, meta row, match
+   ring, reasons — so the hero shows the product instead of an abstract graphic.
+   Labelled "Sample match" above; every value here is illustrative.
+--------------------------------------------------------------------------- */
+function SampleMatchCard() {
+  const MATCH = 92;
+
+  return (
+    <div className="nb-panel nb-shadow-lg overflow-hidden">
+      <div className="flex flex-col sm:flex-row">
+
+        <div className="flex-1 p-6">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+              National Infrastructure Corp.
+            </span>
+            <span className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 flex items-center gap-1">
+              <CheckCircle2 size={11} strokeWidth={3} />
+              Govt Verified
+            </span>
+          </div>
+
+          <h3 className="nb-h text-xl text-black dark:text-white leading-tight">
+            Data Analyst Intern
+          </h3>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4">
+            <span className="nb-label flex items-center gap-1.5">
+              <Building2 size={14} /> IT &amp; Software
+            </span>
+            <span className="nb-label flex items-center gap-1.5">
+              <MapPin size={14} /> Pune, Maharashtra
+            </span>
+            <span className="nb-label flex items-center gap-1.5">
+              <IndianRupee size={14} /> 12,000/mo
+            </span>
+          </div>
+        </div>
+
+        <div className="w-full sm:w-44 bg-gray-50 dark:bg-[#111] border-t-2 sm:border-t-0 sm:border-l-2 border-black dark:border-white flex flex-col items-center justify-center p-6">
+          <div className="relative w-20 h-20 mb-3">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
+              <path
+                className="text-gray-200 dark:text-gray-700"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <motion.path
+                className="text-blue-600 dark:text-blue-400"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: MATCH / 100 }}
+                transition={{ duration: 1.1, delay: 0.5, ease: "easeOut" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-lg font-black text-black dark:text-white">
+                {MATCH}%
+              </span>
+            </div>
+          </div>
+          <span className="nb-label text-center">Match score</span>
+        </div>
+      </div>
+
+      {/* Reasons — the "Why this match?" panel, shown open */}
+      <div className="border-t-2 border-black dark:border-white bg-gray-50 dark:bg-[#111] p-6">
+        <p className="nb-label mb-4">Why this match</p>
+        <ul className="space-y-2.5">
+          {[
+            "3 of your 5 skills are required for this role",
+            "Located in your preferred home state",
+            "Sector matches your first preference",
+          ].map((reason) => (
+            <li key={reason} className="flex items-start gap-3">
+              <span className="nb-invert p-0.5 mt-0.5 shrink-0">
+                <CheckCircle2 size={13} strokeWidth={2.5} />
+              </span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {reason}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="flex flex-wrap gap-2 mt-5">
+          <span className="px-2.5 py-1 bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 text-xs font-bold">
+            ✓ Python
+          </span>
+          <span className="px-2.5 py-1 bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 text-xs font-bold">
+            ✓ SQL
+          </span>
+          <span className="px-2.5 py-1 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 text-xs font-bold">
+            ~ Power BI
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

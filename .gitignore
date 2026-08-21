@@ -2,6 +2,18 @@
 .env
 .env.local
 .env.*
+
+# Local test fixtures — NEVER commit.
+# Contains a Firebase Admin service-account private key, an Aadhaar offline
+# e-KYC ZIP, personal marksheets and an intro video.
+pm_modi_auth/
+
+# Service-account / credential JSON anywhere in the tree
+**/*firebase-adminsdk*.json
+**/*service-account*.json
+
+# Crash dumps
+*.stackdump
 node_modules/
 .venv/
 venv/

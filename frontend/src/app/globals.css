@@ -110,8 +110,116 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: Arial, Helvetica, sans-serif;
+    /* Inter is loaded in app/layout.tsx via next/font and exposed as --font-inter. */
+    font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+      "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
+}
+
+/* ============================================================================
+   NEO-BRUTALIST DESIGN PRIMITIVES
+   The shared vocabulary used by every route (/, /login, /wizard, /profile,
+   /recommendations, /admin). Previously these were 100+ character class strings
+   copy-pasted across six files, which is exactly how the pages drifted apart.
+   Written as plain CSS (not @apply) so the dark variants are unambiguous.
+   ========================================================================== */
+@layer components {
+  /* Opaque bordered surface. The one card look in the app. */
+  .nb-panel {
+    border-radius: 0;
+    border: 2px solid #000;
+    background-color: #fff;
+  }
+  .dark .nb-panel {
+    border-color: #fff;
+    background-color: #0a0a0a;
+  }
+
+  /* Inset surface within a panel (stat cells, code-ish blocks). */
+  .nb-inset {
+    border-radius: 0;
+    border: 2px solid #000;
+    background-color: #f9fafb;
+  }
+  .dark .nb-inset {
+    border-color: #fff;
+    background-color: #111;
+  }
+
+  /* Hard offset shadows. lg = cards, md = list items, sm = buttons/bars. */
+  .nb-shadow-lg { box-shadow: 8px 8px 0 0 #000; }
+  .dark .nb-shadow-lg { box-shadow: 8px 8px 0 0 #fff; }
+
+  .nb-shadow-md { box-shadow: 6px 6px 0 0 #000; }
+  .dark .nb-shadow-md { box-shadow: 6px 6px 0 0 #fff; }
+
+  .nb-shadow-sm { box-shadow: 4px 4px 0 0 #000; }
+  .dark .nb-shadow-sm { box-shadow: 4px 4px 0 0 #fff; }
+
+  /* The app's signature interaction: the element physically presses into its
+     own shadow. Used on every button and interactive card. */
+  .nb-press {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .nb-press:hover {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  .nb-press:active {
+    transform: translate(3px, 3px);
+  }
+
+  /* Eyebrow / field-label type.
+     gray-600 rather than the gray-500 used elsewhere in the app: at 12px bold,
+     gray-500 (#6b7280) on the cream background is 4.46:1 and fails WCAG AA.
+     gray-600 is 6.97:1. Dark mode gray-400 on black is 8.27:1. */
+  .nb-label {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #4b5563;
+  }
+  .dark .nb-label { color: #9ca3af; }
+
+  /* Heading type. */
+  .nb-h {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.025em;
+  }
+
+  /* Inverted block — the app's emphasis device (selected states, banners). */
+  .nb-invert {
+    background-color: #000;
+    color: #fff;
+  }
+  .dark .nb-invert {
+    background-color: #fff;
+    color: #000;
+  }
+
+  /* 2px structural rule. */
+  .nb-rule { border-top: 2px solid #000; }
+  .dark .nb-rule { border-top-color: #fff; }
+
+
+  /* Respect users who ask for less motion. */
+  @media (prefers-reduced-motion: reduce) {
+    .nb-press { transition: none; }
+    .nb-press:hover,
+    .nb-press:active { transform: none; }
+  }
+}
+
+/* Devanagari half of the bilingual wordmark (Noto Sans Devanagari is loaded in
+   app/layout.tsx). Deliberately NOT named `.font-devanagari` and deliberately
+   outside @layer components: `font-*` is Tailwind's own utility namespace and a
+   custom class there gets swallowed rather than emitted. */
+.nb-devanagari {
+  font-family: var(--font-devanagari), "Nirmala UI", "Noto Sans Devanagari",
+    sans-serif;
 }
 
 /* Background animation mesh grid used in premium UIs */

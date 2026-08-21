@@ -1,16 +1,26 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Noto_Sans_Devanagari } from 'next/font/google'
 import './globals.css'
 import { Navbar } from '@/components/layout/Navbar'
+import { Footer } from '@/components/layout/Footer'
 
 import { BackgroundBeams } from '@/components/ui/background-beams'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+
+// Devanagari companion for the bilingual wordmark. Inter carries no Devanagari
+// glyphs, so without this the Hindi mark falls back to whatever the OS ships.
+const notoDevanagari = Noto_Sans_Devanagari({
+  subsets: ['devanagari'],
+  variable: '--font-devanagari',
+})
 
 export const metadata: Metadata = {
-  title: 'PM Internship Smart Allocation Engine | PMIS',
-  description: 'AI-Based Internship Recommendation Engine for the PM Internship Scheme. Find personalized, government-verified internships across India with our smart matching engine.',
+  title: 'Kaushalya | PM Internship Smart Allocation Engine',
+  description: 'Kaushalya is the AI-based internship recommendation engine for the PM Internship Scheme. Find personalized, government-verified internships across India with our smart matching engine.',
   keywords: [
+    'Kaushalya',
+    'Kaushalya internship',
     'PM Internship Scheme',
     'PMIS',
     'Government Internship',
@@ -24,18 +34,18 @@ export const metadata: Metadata = {
     'Youth Employment',
     'Best Internships for students'
   ],
-  authors: [{ name: 'PMIS Platform' }],
+  authors: [{ name: 'Kaushalya' }],
   openGraph: {
-    title: 'PMIS AI Recommendation Engine',
-    description: 'Find your perfect internship match using our AI-driven PM Internship Scheme allocation engine.',
+    title: 'Kaushalya | AI Internship Recommendation Engine',
+    description: 'Find your perfect internship match using Kaushalya, the AI-driven PM Internship Scheme allocation engine.',
     url: 'https://pmis-demo.vercel.app', // Update to actual production URL
-    siteName: 'PM Internship Module',
+    siteName: 'Kaushalya',
     images: [
       {
         url: '/og-image.png', // Fallback, would need an actual public image path
         width: 1200,
         height: 630,
-        alt: 'PMIS Platform Preview',
+        alt: 'Kaushalya Platform Preview',
       },
     ],
     locale: 'en_IN',
@@ -43,7 +53,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PM Internship Smart Allocation Engine',
+    title: 'Kaushalya | PM Internship Smart Allocation Engine',
     description: 'Discover the best government internships tailored exactly to your skills using AI.',
   },
   robots: {
@@ -58,13 +68,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${notoDevanagari.variable}`}>
       <body className={`${inter.className} flex flex-col min-h-screen relative`}>
         <BackgroundBeams />
         <Navbar />
         <main className="flex-1">
           {children}
         </main>
+        <Footer />
       </body>
     </html>
   )

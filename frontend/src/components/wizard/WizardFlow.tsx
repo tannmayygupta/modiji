@@ -11,49 +11,12 @@ import {
   Lock, GraduationCap, Lightbulb, Building2, MapPin, Camera,
   CheckCircle2, ShieldCheck, Upload, FileText, AlertTriangle
 } from "lucide-react";
+import {
+  EDUCATION_LEVELS, EDUCATION_LABELS, COMMON_SKILLS, SECTORS, STATES,
+  WIZARD_TOTAL_STEPS,
+} from "@/lib/constants";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-
-const EDUCATION_LEVELS = ["10TH", "12TH", "ITI", "DIPLOMA", "GRADUATE", "PG"];
-const EDUCATION_LABELS: Record<string, string> = {
-  "10TH": "10th Pass",
-  "12TH": "12th Pass",
-  "ITI": "ITI / Vocational",
-  "DIPLOMA": "Diploma",
-  "GRADUATE": "Undergraduate",
-  "PG": "Post Graduate",
-};
-const COMMON_SKILLS = [
-  "Python", "JavaScript", "Java", "SQL", "React", "Node.js", "C++",
-  "Data Analysis", "Excel", "Communication", "Machine Learning",
-  "HTML/CSS", "Git", "MongoDB", "Django", "Flask", "REST API",
-  "AutoCAD", "Marketing", "Sales", "HR", "Content Writing",
-  "Graphic Design", "Video Editing", "UI/UX Design", "DevOps",
-  "Cloud Computing", "Networking", "Cybersecurity", "Power BI",
-  "Tally", "SAP", "Project Management", "Six Sigma",
-];
-const SECTORS = [
-  "IT & Software Development", "Banking & Financial Services",
-  "Healthcare", "Manufacturing & Industrial", "Automotive",
-  "Pharmaceutical", "Oil, Gas & Energy", "Telecom",
-  "Infrastructure & Construction", "FMCG",
-  "Retail & Consumer Durables", "Agriculture & Allied",
-  "Media, Entertainment & Education", "Consulting Services",
-  "Travel & Hospitality", "Chemical", "Metals & Mining",
-  "Aviation & Defence", "Textile Manufacturing",
-  "Cement & Building Materials", "Gems & Jewellery",
-];
-const STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
-  "Chhattisgarh", "Goa", "Gujarat", "Haryana",
-  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala",
-  "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya",
-  "Mizoram", "Nagaland", "Odisha", "Punjab",
-  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
-  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-  "Delhi", "Chandigarh", "Jammu & Kashmir", "Ladakh",
-  "Puducherry", "Andaman & Nicobar",
-];
 
 function getToken() {
   if (typeof window !== "undefined") return localStorage.getItem("pmis_token");
@@ -65,7 +28,7 @@ export function WizardFlow() {
 
   // Steps: 0=Aadhaar, 1=Upload Docs, 2=Education, 3=Skills, 4=Sectors, 5=Location, 6=Video
   const [step, setStep] = useState(0);
-  const totalSteps = 6; // Steps 1-6 shown in progress
+  const totalSteps = WIZARD_TOTAL_STEPS; // Steps 1-6 shown in progress
   const fileInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
